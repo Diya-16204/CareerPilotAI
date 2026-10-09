@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 const portals = [
-  { key: 'PORTAL_A', route: 'portal_a', title: 'Product Analyst', questions: ['Why are you interested in product analysis?'], wizard: false },
+  { key: 'PORTAL_A', route: 'portal_a', title: 'Product Analyst', questions: [], wizard: false },
   { key: 'PORTAL_B', route: 'portal_b', title: 'Software Engineer', questions: ['What is your highest completed education?', 'Describe a project you are proud of.'], wizard: true },
   { key: 'PORTAL_C', route: 'portal_c', title: 'UX Researcher', questions: ['How would you recruit participants for a new feature?', 'What accessibility checks do you include in research?'], wizard: false },
 ]
@@ -30,6 +30,7 @@ for (const portal of portals) {
     await page.getByRole('button', { name: new RegExp(portal.title) }).click()
     await page.getByLabel('Full name').fill('Alex Example')
     await page.getByLabel('Email address').fill('alex@example.test')
+    if (portal.key === 'PORTAL_A') await page.getByLabel('Cover letter').fill('I am interested in this simulated product analyst role.')
     if (portal.wizard) {
       await page.getByRole('button', { name: 'Review application' }).click()
       await page.getByLabel('Highest completed education').fill('Bachelor degree')
@@ -40,7 +41,8 @@ for (const portal of portals) {
     for (const question of portal.questions) await page.getByLabel(question).fill('This is an approved test answer.')
     await page.getByRole('button', { name: 'Review application' }).click()
     await expect(page.getByText('Review your application')).toBeVisible()
-    await expect(page.getByText('This is an approved test answer.').first()).toBeVisible()
+    if (portal.questions.length) await expect(page.getByText('This is an approved test answer.').first()).toBeVisible()
+    else await expect(page.getByText('I am interested in this simulated product analyst role.')).toBeVisible()
     await page.getByRole('checkbox').check()
     await page.getByRole('button', { name: 'Confirm simulated submission' }).click()
     await expect(page.getByRole('heading', { name: 'Application verified' })).toBeVisible()
@@ -48,5 +50,7 @@ for (const portal of portals) {
     expect(submitted?.consent).toBe(true)
     expect(submitted?.jobKey).toBe(`job-${portal.key.toLowerCase()}`)
     expect(Object.keys(submitted?.answers as object)).toHaveLength(portal.questions.length)
+    if (portal.key === 'PORTAL_A') expect(submitted?.coverLetter).toBe('I am interested in this simulated product analyst role.')
+    if (portal.key === 'PORTAL_B') expect(submitted?.education).toBe('Bachelor degree')
   })
 }

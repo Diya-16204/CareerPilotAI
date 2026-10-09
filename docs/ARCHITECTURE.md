@@ -11,16 +11,17 @@ Spring Security -> REST controllers -> domain services -> JPA repositories
                                                 |             |
                                      AI provider port     PostgreSQL/Flyway
                                      deterministic local
-Browser automation -> allowlisted simulated portal adapters -> submission records
+Portal UI -> authenticated simulation API -> owner-scoped submission records
+Future Playwright runner -> allowlisted simulated portal adapters
 ```
 
 ## Module boundaries
 
-`auth` handles credentials, access tokens and current-user identity; `resume` owns private files, parsed contact/skill hints and immutable versions; `jobs` owns searchable seeded listings; `matching` owns deterministic scoring/evidence; `ai` supplies a clearly labeled local template provider; `applications` owns status history and persisted summary metrics; `interview` owns question bank, sessions and local rubric evaluations. User profile editing, user imports, and automation adapters remain to be implemented. `common` holds API errors, paging and validation; `config` wires security, storage, AI, and OpenAPI.
+`auth` handles credentials, access tokens and current-user identity; `user` owns editable profile and password changes; `resume` owns private files, parsed contact/skill hints and immutable versions; `jobs` owns seeded listings and user-provided imports; `matching` owns deterministic scoring/evidence; `ai` supplies a clearly labeled local template provider; `applications` owns status history and persisted summary metrics; `interview` owns question bank, sessions and local rubric evaluations; `portal` owns fictional submission validation, idempotency, storage, and sanitized verification. A Playwright runner, durable automation run history, and real-site adapters remain to be implemented. `common` holds API errors, paging and validation; `config` wires security, storage, AI, and OpenAPI.
 
 ## Security and data flow
 
-JWT access tokens are short lived and held in memory by the frontend; refresh is deliberately deferred until a secure rotation/revocation design is implemented. Passwords use BCrypt. Every user-specific query filters on authenticated owner identity. Uploads remain outside public directories, are size/type/content checked, and are not logged. External AI and portal integrations are ports; development fallback output is labeled. User approval gates any application workflow.
+JWT access tokens are short lived and held in memory by the frontend; refresh is deliberately deferred until a secure rotation/revocation design is implemented. Passwords use BCrypt. Every user-specific query filters on authenticated owner identity. Resume uploads remain outside public directories, are size/type/content checked, and are not logged. Simulated portal submissions require authenticated ownership, explicit user consent, size/type/signature checks, owner-scoped idempotency, and sanitized confirmation lookup. External AI and portal integrations are not configured; development fallback output is labeled. User approval gates each simulated application submission.
 
 ## Runtime and failure behavior
 

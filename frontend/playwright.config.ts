@@ -1,5 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
+const browserChannel = process.env.PLAYWRIGHT_BROWSER === 'msedge' ? 'msedge' : undefined
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -7,6 +9,6 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: 'list',
   use: { baseURL: 'http://127.0.0.1:4173', trace: 'retain-on-failure', screenshot: 'only-on-failure' },
-  projects: [{ name: 'edge', use: { ...devices['Desktop Chrome'], channel: 'msedge' } }],
+  projects: [{ name: browserChannel ?? 'chromium', use: { ...devices['Desktop Chrome'], channel: browserChannel } }],
   webServer: { command: 'npm run dev -- --host 127.0.0.1 --port 4173', url: 'http://127.0.0.1:4173', reuseExistingServer: !process.env.CI, timeout: 30_000 },
 })

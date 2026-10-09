@@ -29,7 +29,7 @@ export const authApi = {
 }
 export const careerApi = {
   portalJobs: async (portal: string) => (await api.get<PortalJob[]>(`/simulated-portals/${portal}/jobs`)).data,
-  submitPortalApplication: async (portal: string, idempotencyKey: string, input: { jobKey: string; applicantName: string; applicantEmail: string; resumeFileName: string; resumeBase64: string; answers: Record<string,string>; consent: boolean }) => (await api.post<PortalSubmission>(`/simulated-portals/${portal}/submissions`, input, { headers: { 'Idempotency-Key': idempotencyKey } })).data,
+  submitPortalApplication: async (portal: string, idempotencyKey: string, input: { jobKey: string; applicantName: string; applicantEmail: string; education: string | null; experience: string | null; coverLetter: string | null; resumeFileName: string; resumeBase64: string; answers: Record<string,string>; consent: boolean }) => (await api.post<PortalSubmission>(`/simulated-portals/${portal}/submissions`, input, { headers: { 'Idempotency-Key': idempotencyKey } })).data,
   verifyPortalSubmission: async (confirmationId: string) => (await api.get<PortalVerification>(`/simulated-portals/submissions/${confirmationId}`)).data,
   analytics: async () => (await api.get<AnalyticsSummary>('/analytics/summary')).data,
   jobs: async (params: { q?: string; page?: number; size?: number }) => (await api.get<Page<Job>>('/jobs', { params })).data,

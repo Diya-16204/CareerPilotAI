@@ -38,7 +38,7 @@ Base path: `/api/v1`. JSON, UTF-8. Authenticated requests use a short-lived bear
 | `GET /interviews/sessions` | Required | paged owner-only interview history. |
 | `GET /interviews/sessions/{id}` | Required | owner-only session and answer details. |
 | `GET /simulated-portals/{portal}/jobs` | Public | locally seeded fictional jobs for `portal_a`, `portal_b`, or `portal_c`. |
-| `POST /simulated-portals/{portal}/submissions` | Required | `Idempotency-Key: UUID`; requires explicit consent, a validated PDF/DOCX attachment (base64, max 5 MB), applicant details, job key, and answers. Persists an owner-scoped simulation record and returns its confirmation ID. |
+| `POST /simulated-portals/{portal}/submissions` | Required | `Idempotency-Key: UUID`; requires explicit consent, a validated PDF/DOCX attachment (base64, max 5 MB), applicant details, job key, and portal-specific fields (Portal A cover letter; Portal B education and experience; Portal C role-specific answers). Persists an owner-scoped simulation record and returns its confirmation ID. Replays and duplicate same-role submissions are rejected or return the existing confirmation. |
 | `GET /simulated-portals/submissions/{confirmationId}` | Required | owner-only sanitized verification response; returns `PERSISTED` only for a saved record. |
 
 OpenAPI is exposed through Swagger UI in development. Portal browser tests currently mock HTTP responses; actual migration and persistence verification require PostgreSQL and have not run. Portal routes are local simulations only and cannot submit to real employers. The Playwright suite exercises each form and independently checks the confirmation response, but it does not yet drive the UI against the live backend/database.

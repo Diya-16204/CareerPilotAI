@@ -6,6 +6,9 @@ CREATE TABLE simulated_portal_submissions (
     job_title VARCHAR(160) NOT NULL,
     applicant_name VARCHAR(120) NOT NULL,
     applicant_email VARCHAR(254) NOT NULL,
+    education VARCHAR(300),
+    experience TEXT,
+    cover_letter TEXT,
     resume_file_name VARCHAR(255),
     resume_bytes BYTEA,
     answers_json TEXT NOT NULL,
@@ -16,3 +19,4 @@ CREATE TABLE simulated_portal_submissions (
 );
 CREATE INDEX idx_simulated_submission_created ON simulated_portal_submissions(created_at DESC);
 CREATE INDEX idx_simulated_submission_owner ON simulated_portal_submissions(owner_user_id, created_at DESC);
+CREATE UNIQUE INDEX uq_simulated_submission_identity ON simulated_portal_submissions(owner_user_id, portal_key, job_key, lower(applicant_email));

@@ -16,7 +16,7 @@ public class SimulatedPortalService {
     private final SimulatedPortalSubmissionRepository submissions;
     private final ObjectMapper mapper;
     private static final Map<String,List<SimulatedPortalDtos.PortalJob>> JOBS=Map.of(
-        "PORTAL_A",List.of(new SimulatedPortalDtos.PortalJob("standard-product-analyst","Product Analyst","Product","Remote","Help teams understand customer needs and improve product decisions.",List.of("Clear communication","Data-informed decisions"),List.of("Why are you interested in product analysis?"))),
+        "PORTAL_A",List.of(new SimulatedPortalDtos.PortalJob("standard-product-analyst","Product Analyst","Product","Remote","Help teams understand customer needs and improve product decisions.",List.of("Clear communication","Data-informed decisions"),List.of())),
         "PORTAL_B",List.of(new SimulatedPortalDtos.PortalJob("wizard-software-engineer","Software Engineer","Engineering","New York, NY","Build accessible, reliable tools with a collaborative engineering team.",List.of("Java or TypeScript","Testing","Team collaboration"),List.of("What is your highest completed education?","Describe a project you are proud of."))),
         "PORTAL_C",List.of(new SimulatedPortalDtos.PortalJob("specific-ux-researcher","UX Researcher","Design","Remote","Plan research and turn participant feedback into product insights.",List.of("Interview planning","Synthesis","Accessibility"),List.of("How would you recruit participants for a new feature?","What accessibility checks do you include in research?")))
     );
@@ -43,10 +43,16 @@ public class SimulatedPortalService {
         var existing=submissions.findByOwnerUserIdAndPortalKeyAndIdempotencyKey(ownerUserId,key,idempotencyKey);
         if(existing.isPresent()){
             var prior=existing.get();
-            if(!prior.sameSubmission(request.applicantEmail(),request.applicantName(),request.jobKey(),resume,answers))throw new ResponseStatusException(HttpStatus.CONFLICT,"Idempotency key was already used for another submission.");
+            if(!prior.sameSubmission(request.applicantEmail(),request.applicantName(),request.education(),request.experience(),request.coverLetter(),request.jobKey(),resume,answers))throw new ResponseStatusException(HttpStatus.CONFLICT,"Idempotency key was already used for another submission.");
             return response(prior,true);
         }
-        var saved=submissions.saveAndFlush(new SimulatedPortalSubmission(ownerUserId,key,job.key(),job.title(),request.applicantName().trim(),request.applicantEmail().trim(),request.resumeFileName().trim(),resume,answers,idempotencyKey));
+        var duplicate=submissions.findByOwnerUserIdAndPortalKeyAndJobKeyAndApplicantEmailIgnoreCase(ownerUserId,key,job.key(),request.applicantEmail().trim());
+        if(duplicate.isPresent()){
+            var prior=duplicate.get();
+            if(!prior.sameSubmission(request.applicantEmail(),request.applicantName(),request.education(),request.experience(),request.coverLetter(),request.jobKey(),resume,answers))throw new ResponseStatusException(HttpStatus.CONFLICT,"An application for this role and email is already recorded in this simulated portal.");
+            return response(prior,true);
+        }
+        var saved=submissions.saveAndFlush(new SimulatedPortalSubmission(ownerUserId,key,job.key(),job.title(),request.applicantName().trim(),request.applicantEmail().trim(),optional(request.education()),optional(request.experience()),optional(request.coverLetter()),request.resumeFileName().trim(),resume,answers,idempotencyKey));
         return response(saved,false);
     }
 
@@ -60,10 +66,15 @@ public class SimulatedPortalService {
         if(request.consent()==null||!request.consent())throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Explicit consent is required to submit this simulated application.");
         if(request.applicantName()==null||request.applicantName().isBlank()||request.applicantName().length()>120)throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Applicant name is required (maximum 120 characters).");
         if(request.applicantEmail()==null||!request.applicantEmail().matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")||request.applicantEmail().length()>254)throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"A valid email address is required.");
+        if(request.education()!=null&&request.education().length()>300||request.experience()!=null&&request.experience().length()>2000||request.coverLetter()!=null&&request.coverLetter().length()>4000)throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Education, experience, or cover letter exceeds its allowed length.");
+        if(portal.equals("PORTAL_B")&&(blank(request.education())||blank(request.experience())))throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Education and experience are required for this application wizard.");
+        if(portal.equals("PORTAL_A")&&blank(request.coverLetter()))throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"A cover letter is required for this standard application.");
         if(request.resumeFileName()==null||request.resumeFileName().isBlank()||request.resumeFileName().length()>255||request.resumeBase64()==null||request.resumeBase64().length()>7_000_000)throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"A resume attachment up to 5 MB is required.");
         var requiredQuestions=jobs(portal).get(0).questions();
         if(request.answers()==null||request.answers().size()!=requiredQuestions.size()||!request.answers().keySet().containsAll(requiredQuestions)||request.answers().values().stream().anyMatch(value->value==null||value.isBlank()||value.length()>2000))throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Answer every screening question with text up to 2,000 characters.");
     }
     private String normalize(String portal){String normalized=portal==null?"":portal.trim().toUpperCase();if(!JOBS.containsKey(normalized))throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Unknown simulated portal.");return normalized;}
+    private boolean blank(String value){return value==null||value.isBlank();}
+    private String optional(String value){return blank(value)?null:value.trim();}
     private SimulatedPortalDtos.SubmissionResponse response(SimulatedPortalSubmission saved,boolean reused){return new SimulatedPortalDtos.SubmissionResponse(saved.getConfirmationId(),saved.getPortalKey(),saved.getJobKey(),saved.getJobTitle(),saved.getCreatedAt(),reused);}
 }
