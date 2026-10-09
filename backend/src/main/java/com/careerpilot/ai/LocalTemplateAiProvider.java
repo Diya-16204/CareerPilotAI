@@ -7,7 +7,8 @@ import java.util.List;
 @Component
 @ConditionalOnProperty(name="app.ai.provider",havingValue="local",matchIfMissing=true)
 public class LocalTemplateAiProvider implements AiProvider {
-    @Override public Draft generateCoverLetter(String candidateName,String jobTitle,String company,List<String> verifiedResumeSkills,String tone){
+    @Override public Draft generateCoverLetter(String candidateName,String jobTitle,String company,String jobDescription,
+                                               String reviewedResumeText,List<String> verifiedResumeSkills,String tone){
         String greeting="Dear Hiring Team,";
         String skillSentence=verifiedResumeSkills.isEmpty()?"My resume is attached for your review.":"My resume highlights experience with "+join(verifiedResumeSkills)+".";
         String opening=switch(tone==null?"professional":tone.toLowerCase(java.util.Locale.ROOT)){

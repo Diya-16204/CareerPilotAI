@@ -16,7 +16,7 @@ public class JobService {
 
     @Transactional(readOnly=true)
     public Page<JobDtos.JobResponse> search(String q,String type,Pageable pageable,UUID userId){
-        String query=q==null||q.isBlank()?null:q.trim(); String employment=type==null||type.isBlank()?null:type.trim().toUpperCase();
+        String query=q==null||q.isBlank()?"":q.trim(); String employment=type==null||type.isBlank()?null:type.trim().toUpperCase();
         return jobs.search(userId,query,employment,pageable).map(job->dto(job,userId));
     }
     @Transactional(readOnly=true)

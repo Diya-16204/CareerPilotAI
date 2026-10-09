@@ -9,7 +9,8 @@ import java.util.List;
 @Component
 @ConditionalOnProperty(name="app.ai.provider",havingValue="unconfigured",matchIfMissing=false)
 public class UnconfiguredAiProvider implements AiProvider {
-    @Override public Draft generateCoverLetter(String candidateName,String jobTitle,String company,List<String> skills,String tone){
+    @Override public Draft generateCoverLetter(String candidateName,String jobTitle,String company,String jobDescription,
+                                               String reviewedResumeText,List<String> skills,String tone){
         throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,"The requested AI provider is not configured in this build. Select AI_PROVIDER=local to use the clearly labeled local template.");
     }
 }

@@ -26,7 +26,7 @@ public class CoverLetterService {
         Job job=jobs.findById(request.jobId()).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Job not found."));
         List<String> verified=version.getSkillsText().isBlank()?List.of():Arrays.stream(version.getSkillsText().split(",")).map(String::trim).filter(s->!s.isBlank()).distinct().toList();
         String candidate=users.findById(owner).orElseThrow().getDisplayName();
-        AiProvider.Draft draft=provider.generateCoverLetter(candidate,job.getTitle(),job.getCompany(),verified,request.tone());
+        AiProvider.Draft draft=provider.generateCoverLetter(candidate,job.getTitle(),job.getCompany(),job.getDescription(),version.getExtractedText(),verified,request.tone());
         CoverLetter saved=letters.saveAndFlush(new CoverLetter(users.getReferenceById(owner),job,version,job.getTitle()+" · "+job.getCompany(),draft.body(),draft.source()));return dto(saved);
     }
     @Transactional(readOnly=true) public Page<Response> list(UUID owner,Pageable pageable){return letters.findAllByUser_IdOrderByUpdatedAtDesc(owner,pageable).map(this::dto);}
