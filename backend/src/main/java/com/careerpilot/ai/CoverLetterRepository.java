@@ -7,6 +7,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface CoverLetterRepository extends JpaRepository<CoverLetter,UUID> {
-    Page<CoverLetter> findAllByUserIdOrderByUpdatedAtDesc(UUID userId,Pageable pageable);
-    Optional<CoverLetter> findByIdAndUserId(UUID id,UUID userId);
+    Page<CoverLetter> findAllByUser_IdOrderByUpdatedAtDesc(UUID userId,Pageable pageable);
+    Optional<CoverLetter> findByIdAndUser_Id(UUID id,UUID userId);
 }

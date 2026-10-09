@@ -6,6 +6,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface ResumeRepository extends JpaRepository<Resume,UUID> {
-    List<Resume> findAllByUserIdOrderByUpdatedAtDesc(UUID userId);
-    Optional<Resume> findByIdAndUserId(UUID id,UUID userId);
+    List<Resume> findAllByUser_IdOrderByUpdatedAtDesc(UUID userId);
+    Optional<Resume> findByIdAndUser_Id(UUID id,UUID userId);
 }

@@ -7,7 +7,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface InterviewSessionRepository extends JpaRepository<InterviewSession,UUID> {
-    Optional<InterviewSession> findByIdAndUserId(UUID id,UUID userId);
-    Page<InterviewSession> findAllByUserIdOrderByStartedAtDesc(UUID userId,Pageable pageable);
-    long countByUserId(UUID userId);
+    Optional<InterviewSession> findByIdAndUser_Id(UUID id,UUID userId);
+    Page<InterviewSession> findAllByUser_IdOrderByStartedAtDesc(UUID userId,Pageable pageable);
+    long countByUser_Id(UUID userId);
 }

@@ -23,7 +23,7 @@ public class ApplicationService {
 
     @Transactional
     public Response create(CreateRequest request,UUID userId){
-        if(request.jobId()!=null&&applications.existsByUserIdAndJobId(userId,request.jobId()))throw new ResponseStatusException(HttpStatus.CONFLICT,"This job is already in your application tracker.");
+        if(request.jobId()!=null&&applications.existsByUser_IdAndJobId(userId,request.jobId()))throw new ResponseStatusException(HttpStatus.CONFLICT,"This job is already in your application tracker.");
         Job job=request.jobId()==null?null:jobs.findById(request.jobId()).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Job not found."));
         String title=request.title().trim(),company=request.company().trim();
         ApplicationStatus status=request.status()==null?ApplicationStatus.APPLIED:request.status();
@@ -33,7 +33,7 @@ public class ApplicationService {
     }
 
     @Transactional(readOnly=true)
-    public Page<Response> list(UUID userId,Pageable pageable){return applications.findAllByUserIdOrderByUpdatedAtDesc(userId,pageable).map(this::dto);}
+    public Page<Response> list(UUID userId,Pageable pageable){return applications.findAllByUser_IdOrderByUpdatedAtDesc(userId,pageable).map(this::dto);}
 
     @Transactional
     public Response updateStatus(UUID id,UUID userId,StatusRequest request){
@@ -47,9 +47,9 @@ public class ApplicationService {
     @Transactional(readOnly=true)
     public AnalyticsSummary summary(UUID userId){
         Map<ApplicationStatus,Long> byStatus=new EnumMap<>(ApplicationStatus.class);
-        for(ApplicationStatus status:ApplicationStatus.values())byStatus.put(status,applications.countByUserIdAndStatus(userId,status));
-        List<Activity> recent=applications.findTop5ByUserIdOrderByUpdatedAtDesc(userId).stream().map(a->new Activity(a.getId(),a.getTitle()+" · "+a.getCompany()+" · "+a.getStatus().name().toLowerCase(Locale.ROOT),a.getUpdatedAt())).toList();
-        return new AnalyticsSummary(applications.countByUserId(userId),byStatus.get(ApplicationStatus.INTERVIEW),byStatus.get(ApplicationStatus.OFFER),interviewSessions.countByUserId(userId),interviewAnswers.countByOwner(userId),byStatus,recent);
+        for(ApplicationStatus status:ApplicationStatus.values())byStatus.put(status,applications.countByUser_IdAndStatus(userId,status));
+        List<Activity> recent=applications.findTop5ByUser_IdOrderByUpdatedAtDesc(userId).stream().map(a->new Activity(a.getId(),a.getTitle()+" · "+a.getCompany()+" · "+a.getStatus().name().toLowerCase(Locale.ROOT),a.getUpdatedAt())).toList();
+        return new AnalyticsSummary(applications.countByUser_Id(userId),byStatus.get(ApplicationStatus.INTERVIEW),byStatus.get(ApplicationStatus.OFFER),interviewSessions.countByUser_Id(userId),interviewAnswers.countByOwner(userId),byStatus,recent);
     }
     private Response dto(Application application){return new Response(application.getId(),application.getTitle(),application.getCompany(),application.getStatus(),application.getAppliedAt(),application.getUpdatedAt());}
 }

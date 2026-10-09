@@ -5,5 +5,5 @@ import java.util.List;
 import java.util.UUID;
 
 public interface ResumeJobMatchRepository extends JpaRepository<ResumeJobMatch,UUID> {
-    List<ResumeJobMatch> findTop20ByUserIdOrderByCreatedAtDesc(UUID userId);
+    List<ResumeJobMatch> findTop20ByUser_IdOrderByCreatedAtDesc(UUID userId);
 }

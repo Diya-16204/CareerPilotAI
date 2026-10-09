@@ -22,16 +22,16 @@ public class CoverLetterService {
     @Transactional
     public Response generate(UUID owner,GenerateRequest request){
         ResumeVersion version=versions.findById(request.resumeVersionId()).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Resume version not found."));
-        if(resumes.findByIdAndUserId(version.getResumeId(),owner).isEmpty())throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Resume version not found.");
+        if(resumes.findByIdAndUser_Id(version.getResumeId(),owner).isEmpty())throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Resume version not found.");
         Job job=jobs.findById(request.jobId()).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Job not found."));
         List<String> verified=version.getSkillsText().isBlank()?List.of():Arrays.stream(version.getSkillsText().split(",")).map(String::trim).filter(s->!s.isBlank()).distinct().toList();
         String candidate=users.findById(owner).orElseThrow().getDisplayName();
         AiProvider.Draft draft=provider.generateCoverLetter(candidate,job.getTitle(),job.getCompany(),verified,request.tone());
         CoverLetter saved=letters.saveAndFlush(new CoverLetter(users.getReferenceById(owner),job,version,job.getTitle()+" · "+job.getCompany(),draft.body(),draft.source()));return dto(saved);
     }
-    @Transactional(readOnly=true) public Page<Response> list(UUID owner,Pageable pageable){return letters.findAllByUserIdOrderByUpdatedAtDesc(owner,pageable).map(this::dto);}
+    @Transactional(readOnly=true) public Page<Response> list(UUID owner,Pageable pageable){return letters.findAllByUser_IdOrderByUpdatedAtDesc(owner,pageable).map(this::dto);}
     @Transactional public Response update(UUID id,UUID owner,UpdateRequest request){CoverLetter letter=owned(id,owner);letter.update(request.body().trim());letters.saveAndFlush(letter);return dto(letter);}
     @Transactional(readOnly=true) public Response get(UUID id,UUID owner){return dto(owned(id,owner));}
-    private CoverLetter owned(UUID id,UUID owner){return letters.findByIdAndUserId(id,owner).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Cover letter not found."));}
+    private CoverLetter owned(UUID id,UUID owner){return letters.findByIdAndUser_Id(id,owner).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Cover letter not found."));}
     private Response dto(CoverLetter letter){return new Response(letter.getId(),letter.getJobId(),letter.getTitle(),letter.getBody(),letter.getGenerationSource(),letter.getCreatedAt(),letter.getUpdatedAt());}
 }

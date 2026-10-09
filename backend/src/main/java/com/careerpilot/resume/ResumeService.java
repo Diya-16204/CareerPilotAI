@@ -36,7 +36,7 @@ public class ResumeService {
         String contentType=format==ResumeParser.Format.PDF?PDF_TYPE:DOCX_TYPE;
         String title=cleanTitle(requestedTitle,filename);
         Resume resume=resumeId==null?resumes.save(new Resume(users.getReferenceById(ownerId),title)):
-                resumes.findByIdAndUserId(resumeId,ownerId).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Resume not found."));
+                resumes.findByIdAndUser_Id(resumeId,ownerId).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Resume not found."));
         int number=versions.countByResumeId(resume.getId())+1;
         String key=UUID.randomUUID().toString();
         try{
@@ -48,7 +48,7 @@ public class ResumeService {
     }
 
     @Transactional(readOnly=true)
-    public List<ResumeSummary> list(UUID ownerId){return resumes.findAllByUserIdOrderByUpdatedAtDesc(ownerId).stream().map(resume->{
+    public List<ResumeSummary> list(UUID ownerId){return resumes.findAllByUser_IdOrderByUpdatedAtDesc(ownerId).stream().map(resume->{
         List<ResumeVersion> all=versions.findAllByResumeIdOrderByVersionNumberDesc(resume.getId());ResumeVersion latest=all.isEmpty()?null:all.getFirst();
         return new ResumeSummary(resume.getId(),resume.getTitle(),resume.getActiveVersionNumber(),resume.getCreatedAt(),resume.getUpdatedAt(),all.size(),latest==null?null:latest.getOriginalFileName());
     }).toList();}
@@ -73,7 +73,7 @@ public class ResumeService {
     @Transactional
     public void delete(UUID id,UUID ownerId){Resume resume=owned(id,ownerId);versions.findAllByResumeIdOrderByVersionNumberDesc(id).forEach(v->storage.delete(v.getStorageKey()));resumes.delete(resume);}
 
-    private Resume owned(UUID id,UUID owner){return resumes.findByIdAndUserId(id,owner).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Resume not found."));}
+    private Resume owned(UUID id,UUID owner){return resumes.findByIdAndUser_Id(id,owner).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Resume not found."));}
     private ResumeResponse detail(Resume resume,List<ResumeVersion> found){return new ResumeResponse(resume.getId(),resume.getTitle(),resume.getActiveVersionNumber(),resume.getCreatedAt(),resume.getUpdatedAt(),found.stream().map(this::versionDto).toList());}
     private VersionResponse versionDto(ResumeVersion v){List<String> skills=v.getSkillsText().isBlank()?List.of():Arrays.stream(v.getSkillsText().split(",")).map(String::trim).filter(s->!s.isBlank()).toList();return new VersionResponse(v.getId(),v.getVersionNumber(),v.getOriginalFileName(),v.getContentType(),v.getExtractedEmail(),v.getExtractedPhone(),skills,v.isReviewed(),v.getCreatedAt(),v.getExtractedText());}
     private String safeFilename(String name){if(name==null||name.isBlank())throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"The uploaded file needs a name.");String basename=name.replace('\\','/');basename=basename.substring(basename.lastIndexOf('/')+1).replaceAll("[\\p{Cntrl}]","").trim();if(basename.length()>255)basename=basename.substring(basename.length()-255);return basename;}

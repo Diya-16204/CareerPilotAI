@@ -4,6 +4,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.UUID;
 
 public interface SavedJobRepository extends JpaRepository<SavedJob,UUID> {
-    boolean existsByUserIdAndJobId(UUID userId,UUID jobId);
-    void deleteByUserIdAndJobId(UUID userId,UUID jobId);
+    boolean existsByUser_IdAndJob_Id(UUID userId,UUID jobId);
+    void deleteByUser_IdAndJob_Id(UUID userId,UUID jobId);
 }

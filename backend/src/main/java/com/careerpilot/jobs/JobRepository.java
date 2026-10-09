@@ -12,5 +12,5 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
     Page<Job> search(@Param("ownerId") UUID ownerId,@Param("q") String q,@Param("employmentType") String employmentType,Pageable pageable);
     @Query("select j from Job j where j.id=:id and (j.owner is null or (:ownerId is not null and j.owner.id=:ownerId))")
     java.util.Optional<Job> findVisibleById(@Param("id") UUID id,@Param("ownerId") UUID ownerId);
-    boolean existsByOwnerIdAndTitleIgnoreCaseAndCompanyIgnoreCase(UUID ownerId,String title,String company);
+    boolean existsByOwner_IdAndTitleIgnoreCaseAndCompanyIgnoreCase(UUID ownerId,String title,String company);
 }

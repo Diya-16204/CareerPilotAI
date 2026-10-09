@@ -24,16 +24,16 @@ public class JobService {
     @Transactional
     public void save(UUID jobId,UUID userId){
         Job job=jobs.findVisibleById(jobId,userId).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Job not found."));
-        if(!saved.existsByUserIdAndJobId(userId,jobId)) saved.save(new SavedJob(users.getReferenceById(userId),job));
+        if(!saved.existsByUser_IdAndJobId(userId,jobId)) saved.save(new SavedJob(users.getReferenceById(userId),job));
     }
     @Transactional
-    public void unsave(UUID jobId,UUID userId){saved.deleteByUserIdAndJobId(userId,jobId);}
+    public void unsave(UUID jobId,UUID userId){saved.deleteByUser_IdAndJobId(userId,jobId);}
     @Transactional
     public JobDtos.JobResponse importJob(UUID owner,JobDtos.ImportRequest request){
         String title=request.title().trim(),company=request.company().trim();
-        if(jobs.existsByOwnerIdAndTitleIgnoreCaseAndCompanyIgnoreCase(owner,title,company))throw new ResponseStatusException(HttpStatus.CONFLICT,"This imported job is already in your job list.");
+        if(jobs.existsByOwner_IdAndTitleIgnoreCaseAndCompanyIgnoreCase(owner,title,company))throw new ResponseStatusException(HttpStatus.CONFLICT,"This imported job is already in your job list.");
         Job job=jobs.saveAndFlush(new Job(users.getReferenceById(owner),title,company,request.location().trim(),request.employmentType().toUpperCase(),request.description().trim(),request.skills()));
         return dto(job,owner);
     }
-    private JobDtos.JobResponse dto(Job job,UUID userId){return new JobDtos.JobResponse(job.getId(),job.getTitle(),job.getCompany(),job.getLocation(),job.getEmploymentType(),job.getDescription(),job.getSkills(),job.getSource(),job.isSample(),userId!=null&&saved.existsByUserIdAndJobId(userId,job.getId()));}
+    private JobDtos.JobResponse dto(Job job,UUID userId){return new JobDtos.JobResponse(job.getId(),job.getTitle(),job.getCompany(),job.getLocation(),job.getEmploymentType(),job.getDescription(),job.getSkills(),job.getSource(),job.isSample(),userId!=null&&saved.existsByUser_IdAndJobId(userId,job.getId()));}
 }
