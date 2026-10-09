@@ -1,0 +1,50 @@
+name: Build and test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: careerpilot
+          POSTGRES_USER: careerpilot
+          POSTGRES_PASSWORD: careerpilot
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U careerpilot -d careerpilot"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+      - run: mvn -B verify -f backend/pom.xml
+        env:
+          DATABASE_URL: jdbc:postgresql://localhost:5432/careerpilot
+          DATABASE_USERNAME: careerpilot
+          DATABASE_PASSWORD: careerpilot
+          JWT_SECRET: ci-only-test-secret-value-not-for-real-users-123456

@@ -1,0 +1,47 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-careerpilot}
+      POSTGRES_USER: ${POSTGRES_USER:-careerpilot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-locally}
+    volumes:
+      - careerpilot-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-careerpilot} -d ${POSTGRES_DB:-careerpilot}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-careerpilot}
+      DATABASE_USERNAME: ${POSTGRES_USER:-careerpilot}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-change-me-locally}
+      JWT_SECRET: ${JWT_SECRET:-local-development-secret-change-this-to-a-random-value-32-bytes-min}
+      JWT_EXPIRATION_SECONDS: ${JWT_EXPIRATION_SECONDS:-900}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/actuator/health/readiness"]
+      interval: 15s
+      timeout: 4s
+      retries: 15
+      start_period: 30s
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: /api/v1
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  careerpilot-postgres:

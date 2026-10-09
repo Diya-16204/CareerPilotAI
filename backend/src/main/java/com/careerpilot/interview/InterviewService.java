@@ -1,0 +1,33 @@
+package com.careerpilot.interview;
+
+import com.careerpilot.auth.UserAccountRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+import java.util.*;
+import java.util.regex.Pattern;
+import static com.careerpilot.interview.InterviewDtos.*;
+
+@Service
+public class InterviewService {
+    private static final Set<String> STOP=Set.of("that","this","with","from","have","what","when","where","which","would","could","should","their","there","than","then","your","about","into","such","also","while","both","each","other","more","less","does","used","using","because","after","before","between","through","those","these","will","must","them","they","were","been","being","over","under","only","often","usually","another","rather");
+    private final InterviewQuestionRepository questions;private final InterviewSessionRepository sessions;private final InterviewAnswerRepository answers;private final UserAccountRepository users;
+    public InterviewService(InterviewQuestionRepository questions,InterviewSessionRepository sessions,InterviewAnswerRepository answers,UserAccountRepository users){this.questions=questions;this.sessions=sessions;this.answers=answers;this.users=users;}
+    @Transactional(readOnly=true) public List<QuestionResponse> questions(String topic,String difficulty){return questions.search(normalize(topic),normalize(difficulty)).stream().map(this::questionDto).toList();}
+    @Transactional public SessionResponse start(UUID owner,StartRequest request){String topic=request.topic().trim().toUpperCase(Locale.ROOT),difficulty=request.difficulty().trim().toUpperCase(Locale.ROOT);if(!questions.existsByTopicAndDifficulty(topic,difficulty))throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"No seeded questions are available for that topic and difficulty.");InterviewSession session=sessions.saveAndFlush(new InterviewSession(users.getReferenceById(owner),request.role().trim(),topic,difficulty));return sessionDto(session);}
+    @Transactional public QuestionResponse next(UUID id,UUID owner){InterviewSession session=owned(id,owner);if(!"IN_PROGRESS".equals(session.getState()))return null;Set<UUID> completed=new HashSet<>(answers.findAllBySessionIdOrderByOrdinal(id).stream().map(InterviewAnswer::getQuestionId).toList());InterviewQuestion next=questions.findAllByTopicAndDifficultyOrderBySeedKey(session.getTopic(),session.getDifficulty()).stream().filter(q->!completed.contains(q.getId())).findFirst().orElse(null);if(next==null){session.complete();return null;}return questionDto(next);}
+    @Transactional public AnswerResponse answer(UUID id,UUID owner,AnswerRequest request){InterviewSession session=owned(id,owner);if(!"IN_PROGRESS".equals(session.getState()))throw new ResponseStatusException(HttpStatus.CONFLICT,"This interview session is already complete.");InterviewQuestion question=questions.findById(request.questionId()).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Question not found."));if(!question.getTopic().equals(session.getTopic())||!question.getDifficulty().equals(session.getDifficulty()))throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"This question is not part of the selected session.");if(answers.existsBySessionIdAndQuestionId(id,question.getId()))throw new ResponseStatusException(HttpStatus.CONFLICT,"This question was already answered.");int ordinal=answers.countBySessionId(id)+1;int score=coverage(question.getModelAnswer(),request.answer());String feedback=feedback(score,request.answer());InterviewAnswer saved=answers.saveAndFlush(new InterviewAnswer(session,question,ordinal,request.answer().trim(),score,feedback));List<InterviewAnswer> sessionAnswers=answers.findAllBySessionIdOrderByOrdinal(id);session.recordScore((int)Math.round(sessionAnswers.stream().mapToInt(InterviewAnswer::getContentCoverageScore).average().orElse(0)));return answerDto(saved);}
+    @Transactional(readOnly=true) public SessionDetail get(UUID id,UUID owner){InterviewSession session=owned(id,owner);return new SessionDetail(sessionDto(session),answers.findAllBySessionIdOrderByOrdinal(id).stream().map(this::answerDto).toList());}
+    @Transactional(readOnly=true) public Page<SessionResponse> history(UUID owner,Pageable pageable){return sessions.findAllByUserIdOrderByStartedAtDesc(owner,pageable).map(this::sessionDto);}
+    private InterviewSession owned(UUID id,UUID owner){return sessions.findByIdAndUserId(id,owner).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Interview session not found."));}
+    private SessionResponse sessionDto(InterviewSession s){return new SessionResponse(s.getId(),s.getRole(),s.getTopic(),s.getDifficulty(),s.getState(),s.getStartedAt(),s.getEndedAt(),s.getAverageScore(),answers.countBySessionId(s.getId()));}
+    private QuestionResponse questionDto(InterviewQuestion q){return new QuestionResponse(q.getId(),q.getTopic(),q.getDifficulty(),q.getPrompt());}
+    private AnswerResponse answerDto(InterviewAnswer a){return new AnswerResponse(a.getId(),a.getQuestionId(),a.getOrdinal(),a.getQuestionPrompt(),a.getAnswer(),a.getContentCoverageScore(),a.getFeedback(),"LOCAL_KEYWORD_RUBRIC",a.getModelAnswer(),a.getCreatedAt());}
+    private String normalize(String value){return value==null||value.isBlank()?null:value.trim().toUpperCase(Locale.ROOT);}
+    static int coverage(String model,String answer){Set<String> expected=words(model);if(expected.isEmpty())return 0;Set<String> submitted=words(answer);long intersection=expected.stream().filter(submitted::contains).count();return (int)Math.round(100.0*intersection/expected.size());}
+    private static Set<String> words(String text){Set<String> result=new HashSet<>();var matcher=Pattern.compile("[a-zA-Z0-9+#.]{3,}").matcher(text.toLowerCase(Locale.ROOT));while(matcher.find()){String word=matcher.group().replaceAll("[.#+]$","");if(word.length()>=3&&!STOP.contains(word))result.add(word);}return result;}
+    private String feedback(int score,String answer){int count=answer.trim().split("\\s+").length;String depth=score>=70?"Your response covered many key terms; make the reasoning and outcome explicit.":"Add the main concepts from the prompt and support them with a concrete example.";String detail=count<25?" A little more detail may help.":"";return "Local keyword-coverage estimate: "+depth+detail+" Compare your answer with the model response and verify technical accuracy yourself. No AI model or code execution was used.";}
+}
