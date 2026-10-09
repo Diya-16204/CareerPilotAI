@@ -2,7 +2,7 @@
 
 ## Implemented baseline
 
-The current implementation status is authoritative; this document is a design target until corresponding code and tests are recorded. Planned controls include BCrypt password hashing, short-lived JWT access tokens, server-side owner filtering, validated DTOs, centralized safe errors, upload size/content checks, private file storage, restrictive CORS, rate limits, environment-only secrets, and sanitized structured logs.
+Implemented controls include BCrypt password hashing, short-lived JWT access tokens, server-side owner filtering, validated DTOs, centralized safe errors, resume size/content checks, private generated storage keys, restrictive CORS, and environment-provided secrets. No rate limiter or production-grade structured audit logging is implemented yet. The simulated portal API requires authentication to submit and verify; public job listings contain fictional data only. Verification responses omit applicant details. Portal submissions store applicant contact fields and PDF/DOCX bytes in PostgreSQL for the signed-in owner; configure access controls, encryption at rest, and retention/deletion before production use.
 
 ## Constraints and hardening
 

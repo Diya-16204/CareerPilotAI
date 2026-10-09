@@ -26,6 +26,8 @@ public class SimulatedPortalService {
 
     @Transactional
     public SimulatedPortalDtos.SubmissionResponse submit(UUID ownerUserId,String portal,UUID idempotencyKey,SimulatedPortalDtos.SubmissionRequest request){
+        if(ownerUserId==null)throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"Sign in to submit a simulated application.");
+        if(idempotencyKey==null)throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"An idempotency key is required.");
         String key=normalize(portal);
         var job=jobs(key).stream().filter(item->item.key().equals(request.jobKey())).findFirst().orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Simulated job not found."));
         validate(request,key);
@@ -50,6 +52,7 @@ public class SimulatedPortalService {
 
     @Transactional(readOnly=true)
     public SimulatedPortalDtos.VerificationResponse verify(UUID ownerUserId,UUID confirmationId){
+        if(ownerUserId==null)throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"Sign in to verify a simulated application.");
         var saved=submissions.findByConfirmationIdAndOwnerUserId(confirmationId,ownerUserId).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"No simulated submission has that confirmation ID."));
         return new SimulatedPortalDtos.VerificationResponse(saved.getConfirmationId(),saved.getPortalKey(),saved.getJobKey(),saved.getJobTitle(),saved.getCreatedAt(),"PERSISTED");
     }
@@ -58,7 +61,8 @@ public class SimulatedPortalService {
         if(request.applicantName()==null||request.applicantName().isBlank()||request.applicantName().length()>120)throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Applicant name is required (maximum 120 characters).");
         if(request.applicantEmail()==null||!request.applicantEmail().matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")||request.applicantEmail().length()>254)throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"A valid email address is required.");
         if(request.resumeFileName()==null||request.resumeFileName().isBlank()||request.resumeFileName().length()>255||request.resumeBase64()==null||request.resumeBase64().length()>7_000_000)throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"A resume attachment up to 5 MB is required.");
-        if(request.answers()==null||request.answers().size()!=jobs(portal).get(0).questions().size()||request.answers().values().stream().anyMatch(value->value==null||value.isBlank()||value.length()>2000))throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Answer every screening question with text up to 2,000 characters.");
+        var requiredQuestions=jobs(portal).get(0).questions();
+        if(request.answers()==null||request.answers().size()!=requiredQuestions.size()||!request.answers().keySet().containsAll(requiredQuestions)||request.answers().values().stream().anyMatch(value->value==null||value.isBlank()||value.length()>2000))throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Answer every screening question with text up to 2,000 characters.");
     }
     private String normalize(String portal){String normalized=portal==null?"":portal.trim().toUpperCase();if(!JOBS.containsKey(normalized))throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Unknown simulated portal.");return normalized;}
     private SimulatedPortalDtos.SubmissionResponse response(SimulatedPortalSubmission saved,boolean reused){return new SimulatedPortalDtos.SubmissionResponse(saved.getConfirmationId(),saved.getPortalKey(),saved.getJobKey(),saved.getJobTitle(),saved.getCreatedAt(),reused);}
