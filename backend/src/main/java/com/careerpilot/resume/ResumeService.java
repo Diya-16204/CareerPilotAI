@@ -37,41 +37,41 @@ public class ResumeService {
         String title=cleanTitle(requestedTitle,filename);
         Resume resume=resumeId==null?resumes.save(new Resume(users.getReferenceById(ownerId),title)):
                 resumes.findByIdAndUser_Id(resumeId,ownerId).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Resume not found."));
-        int number=versions.countByResumeId(resume.getId())+1;
+        int number=versions.countByResume_Id(resume.getId())+1;
         String key=UUID.randomUUID().toString();
         try{
             storage.store(key,bytes);
             ResumeVersion version=versions.save(new ResumeVersion(resume,number,key,filename,contentType,sha256(bytes),parsed.text(),parsed.email(),parsed.phone(),String.join(",",parsed.skills())));
             resume.setActiveVersionNumber(number);
-            return detail(resume,versions.findAllByResumeIdOrderByVersionNumberDesc(resume.getId()));
+            return detail(resume,versions.findAllByResume_IdOrderByVersionNumberDesc(resume.getId()));
         }catch(RuntimeException|IOException exception){storage.delete(key);throw exception instanceof RuntimeException runtime?runtime:new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"Resume storage failed.");}
     }
 
     @Transactional(readOnly=true)
     public List<ResumeSummary> list(UUID ownerId){return resumes.findAllByUser_IdOrderByUpdatedAtDesc(ownerId).stream().map(resume->{
-        List<ResumeVersion> all=versions.findAllByResumeIdOrderByVersionNumberDesc(resume.getId());ResumeVersion latest=all.isEmpty()?null:all.getFirst();
+        List<ResumeVersion> all=versions.findAllByResume_IdOrderByVersionNumberDesc(resume.getId());ResumeVersion latest=all.isEmpty()?null:all.getFirst();
         return new ResumeSummary(resume.getId(),resume.getTitle(),resume.getActiveVersionNumber(),resume.getCreatedAt(),resume.getUpdatedAt(),all.size(),latest==null?null:latest.getOriginalFileName());
     }).toList();}
 
     @Transactional(readOnly=true)
-    public ResumeResponse get(UUID id,UUID ownerId){Resume resume=owned(id,ownerId);return detail(resume,versions.findAllByResumeIdOrderByVersionNumberDesc(id));}
+    public ResumeResponse get(UUID id,UUID ownerId){Resume resume=owned(id,ownerId);return detail(resume,versions.findAllByResume_IdOrderByVersionNumberDesc(id));}
 
     @Transactional
     public VersionResponse review(UUID id,UUID versionId,UUID ownerId,ReviewRequest request){
-        owned(id,ownerId);ResumeVersion version=versions.findByIdAndResumeId(versionId,id).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Resume version not found."));
+        owned(id,ownerId);ResumeVersion version=versions.findByIdAndResume_Id(versionId,id).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Resume version not found."));
         String skills=request.skills()==null?"":request.skills().stream().map(String::trim).filter(s->!s.isEmpty()).distinct().collect(java.util.stream.Collectors.joining(","));
         version.review(blankToNull(request.email()),blankToNull(request.phone()),skills);return versionDto(version);
     }
 
     @Transactional(readOnly=true)
     public DownloadFile download(UUID id,UUID versionId,UUID ownerId){
-        owned(id,ownerId);ResumeVersion version=versions.findByIdAndResumeId(versionId,id).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Resume version not found."));
+        owned(id,ownerId);ResumeVersion version=versions.findByIdAndResume_Id(versionId,id).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Resume version not found."));
         try{return new DownloadFile(storage.resolve(version.getStorageKey()),version.getOriginalFileName(),version.getContentType());}
         catch(IOException exception){throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Resume file is unavailable.");}
     }
 
     @Transactional
-    public void delete(UUID id,UUID ownerId){Resume resume=owned(id,ownerId);versions.findAllByResumeIdOrderByVersionNumberDesc(id).forEach(v->storage.delete(v.getStorageKey()));resumes.delete(resume);}
+    public void delete(UUID id,UUID ownerId){Resume resume=owned(id,ownerId);versions.findAllByResume_IdOrderByVersionNumberDesc(id).forEach(v->storage.delete(v.getStorageKey()));resumes.delete(resume);}
 
     private Resume owned(UUID id,UUID owner){return resumes.findByIdAndUser_Id(id,owner).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Resume not found."));}
     private ResumeResponse detail(Resume resume,List<ResumeVersion> found){return new ResumeResponse(resume.getId(),resume.getTitle(),resume.getActiveVersionNumber(),resume.getCreatedAt(),resume.getUpdatedAt(),found.stream().map(this::versionDto).toList());}
