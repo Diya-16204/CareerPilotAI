@@ -13,15 +13,21 @@ import com.careerpilot.resume.ResumeVersionRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.TaskExecutor;
+import org.springframework.core.task.TaskRejectedException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.server.ResponseStatusException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -38,6 +44,7 @@ import static com.careerpilot.automation.AutomationRunDtos.*;
 
 @Service
 public class AutomationRunService {
+    private static final Logger log=LoggerFactory.getLogger(AutomationRunService.class);
     private final AutomationRunRepository runs;
     private final ResumeVersionRepository versions;
     private final ResumeRepository resumes;
@@ -56,11 +63,13 @@ public class AutomationRunService {
                                 ResumeStorage storage,UserAccountRepository users,SimulatedPortalService portals,
                                 PortalAutomationRunner runner,JwtService jwt,@Qualifier("portalAutomationExecutor") TaskExecutor portalAutomationExecutor,
                                 org.springframework.transaction.PlatformTransactionManager transactionManager,ObjectMapper mapper,
-                                @Value("${app.automation.frontend-url:http://127.0.0.1:4173}") String frontendUrl,
+                                @Value("${app.automation.frontend-url:http://localhost:5173}") String frontendUrl,
                                 @Value("${app.automation.api-base-url:http://localhost:8080/api/v1}") String apiBaseUrl) {
         this.runs=runs;this.versions=versions;this.resumes=resumes;this.storage=storage;this.users=users;
         this.portals=portals;this.runner=runner;this.jwt=jwt;this.executor=portalAutomationExecutor;
-        this.transactions=new TransactionTemplate(transactionManager);this.mapper=mapper;
+        this.transactions=new TransactionTemplate(transactionManager);
+        this.transactions.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        this.mapper=mapper;
         this.frontendUrl=localUrl(frontendUrl);this.apiBaseUrl=localUrl(apiBaseUrl);
     }
 
@@ -92,7 +101,13 @@ public class AutomationRunService {
                 trimToNull(request.experience()),trimToNull(request.coverLetter()),Map.copyOf(request.answers()),resumeFile,version.getOriginalFileName());
         UUID runId=run.getId();
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization(){
-            @Override public void afterCommit(){executor.execute(()->execute(runId,owner,context));}
+            @Override public void afterCommit(){
+                try{executor.execute(()->execute(runId,owner,context));}
+                catch(TaskRejectedException ex){
+                    transition(runId,()->runs.findById(runId).orElseThrow().finish(AutomationRunStatus.FAILED,null,
+                            "The local browser runner is busy; no simulated submission was started."));
+                }
+            }
         });
         return dto(run);
     }
@@ -118,20 +133,37 @@ public class AutomationRunService {
             }
             transition(runId,()->runs.findById(runId).orElseThrow().finish(AutomationRunStatus.VERIFIED_SUCCESS,result.confirmationId(),"Submission persisted and independently verified."));
         } catch(ProcessPortalAutomationRunner.AutomationExecutionException ex) {
+            log.warn("Automation run {} ended without confirmed completion: {}",runId,ex.getMessage());
             transition(runId,()->runs.findById(runId).orElseThrow().finish(ex.outcomeMayBeUnknown()?AutomationRunStatus.UNVERIFIED:AutomationRunStatus.FAILED,null,
                     ex.outcomeMayBeUnknown()?"The browser run ended before persistence could be independently confirmed.":"The browser workflow failed before submission."));
         } catch(Exception ex) {
+            log.warn("Automation run {} could not be independently verified ({}).",runId,ex.getClass().getSimpleName());
             transition(runId,()->runs.findById(runId).orElseThrow().finish(AutomationRunStatus.UNVERIFIED,null,"The browser outcome could not be independently verified."));
         }
     }
 
     private void transition(UUID id,Runnable update){transactions.executeWithoutResult(status->{update.run();runs.flush();});}
 
+    @EventListener(ApplicationReadyEvent.class)
+    @Transactional
+    public void markInterruptedRunsAfterRestart() {
+        var interrupted=runs.findAllByStatusIn(java.util.List.of(AutomationRunStatus.PENDING,AutomationRunStatus.RUNNING));
+        interrupted.forEach(run->run.finish(AutomationRunStatus.UNVERIFIED,null,
+                "The API restarted before the browser result could be independently confirmed."));
+        if(!interrupted.isEmpty())runs.saveAllAndFlush(interrupted);
+    }
+
     private String fingerprint(StartRequest request) {
         try {
-            var canonical=Map.of("portalKey",request.portalKey(),"jobKey",request.jobKey(),"resumeVersionId",request.resumeVersionId(),
-                    "education",request.education()==null?"":request.education().trim(),"experience",request.experience()==null?"":request.experience().trim(),
-                    "coverLetter",request.coverLetter()==null?"":request.coverLetter().trim(),"answers",new java.util.TreeMap<>(request.answers()),"consent",Boolean.TRUE.equals(request.consent()));
+            Map<String,Object> canonical=new java.util.TreeMap<>();
+            canonical.put("portalKey",request.portalKey());
+            canonical.put("jobKey",request.jobKey());
+            canonical.put("resumeVersionId",request.resumeVersionId());
+            canonical.put("education",request.education()==null?"":request.education().trim());
+            canonical.put("experience",request.experience()==null?"":request.experience().trim());
+            canonical.put("coverLetter",request.coverLetter()==null?"":request.coverLetter().trim());
+            canonical.put("answers",new java.util.TreeMap<>(request.answers()));
+            canonical.put("consent",Boolean.TRUE.equals(request.consent()));
             byte[] digest=MessageDigest.getInstance("SHA-256").digest(mapper.writeValueAsBytes(canonical));
             return java.util.HexFormat.of().formatHex(digest);
         } catch (NoSuchAlgorithmException|IOException ex) { throw new IllegalStateException("Could not fingerprint the automation request.",ex); }

@@ -36,3 +36,14 @@ export type UserProfile = { id: string; email: string; name: string; headline: s
 export type PortalJob = { key: string; title: string; department: string; location: string; description: string; requirements: string[]; questions: string[] }
 export type PortalSubmission = { confirmationId: string; portalKey: string; jobKey: string; jobTitle: string; createdAt: string; reused: boolean }
 export type PortalVerification = Omit<PortalSubmission, 'reused'> & { status: string }
+export type AutomationRunStatus = 'PENDING' | 'RUNNING' | 'VERIFIED_SUCCESS' | 'FAILED' | 'UNVERIFIED'
+export type AutomationRun = {
+  id: string; portalKey: 'PORTAL_A' | 'PORTAL_B' | 'PORTAL_C'; jobKey: string
+  status: AutomationRunStatus; confirmationId: string | null; message: string | null
+  createdAt: string; startedAt: string | null; completedAt: string | null
+}
+export type StartAutomationRun = {
+  portalKey: AutomationRun['portalKey']; jobKey: string; resumeVersionId: string
+  education: string; experience: string; coverLetter: string
+  answers: Record<string, string>; consent: true
+}

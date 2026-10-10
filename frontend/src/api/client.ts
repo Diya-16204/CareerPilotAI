@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { AnalyticsSummary, Application, AuthResponse, CoverLetter, InterviewAnswer, InterviewQuestion, InterviewSession, InterviewSessionDetail, Job, MatchResult, Page, PortalJob, PortalSubmission, PortalVerification, Resume, ResumeSummary, ResumeVersion, User, UserProfile } from './types'
+import type { AnalyticsSummary, Application, AuthResponse, AutomationRun, CoverLetter, InterviewAnswer, InterviewQuestion, InterviewSession, InterviewSessionDetail, Job, MatchResult, Page, PortalJob, PortalSubmission, PortalVerification, Resume, ResumeSummary, ResumeVersion, StartAutomationRun, User, UserProfile } from './types'
 
 let accessToken: string | null = null
 export const setAccessToken = (token: string | null) => { accessToken = token }
@@ -31,6 +31,9 @@ export const careerApi = {
   portalJobs: async (portal: string) => (await api.get<PortalJob[]>(`/simulated-portals/${portal}/jobs`)).data,
   submitPortalApplication: async (portal: string, idempotencyKey: string, input: { jobKey: string; applicantName: string; applicantEmail: string; education: string | null; experience: string | null; coverLetter: string | null; resumeFileName: string; resumeBase64: string; answers: Record<string,string>; consent: boolean }) => (await api.post<PortalSubmission>(`/simulated-portals/${portal}/submissions`, input, { headers: { 'Idempotency-Key': idempotencyKey } })).data,
   verifyPortalSubmission: async (confirmationId: string) => (await api.get<PortalVerification>(`/simulated-portals/submissions/${confirmationId}`)).data,
+  automationRuns: async () => (await api.get<Page<AutomationRun>>('/automation-runs', { params: { page: 0, size: 50 } })).data,
+  startAutomationRun: async (input: StartAutomationRun, idempotencyKey: string) => (await api.post<AutomationRun>('/automation-runs', input, { headers: { 'Idempotency-Key': idempotencyKey } })).data,
+  automationRun: async (id: string) => (await api.get<AutomationRun>(`/automation-runs/${id}`)).data,
   analytics: async () => (await api.get<AnalyticsSummary>('/analytics/summary')).data,
   jobs: async (params: { q?: string; page?: number; size?: number }) => (await api.get<Page<Job>>('/jobs', { params })).data,
   job: async (id: string) => (await api.get<Job>(`/jobs/${id}`)).data,

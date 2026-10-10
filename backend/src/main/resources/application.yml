@@ -41,7 +41,7 @@ app:
     timeout-seconds: ${AI_TIMEOUT_SECONDS:20}
     max-input-characters: ${AI_MAX_INPUT_CHARACTERS:20000}
   automation:
-    frontend-url: ${CAREERPILOT_AUTOMATION_FRONTEND_URL:http://127.0.0.1:4173}
+    frontend-url: ${CAREERPILOT_AUTOMATION_FRONTEND_URL:http://localhost:5173}
     api-base-url: ${CAREERPILOT_AUTOMATION_API_BASE_URL:http://localhost:8080/api/v1}
     node-executable: ${CAREERPILOT_AUTOMATION_NODE:node}
     runner-script: ${CAREERPILOT_AUTOMATION_SCRIPT:../frontend/scripts/portal-automation.mjs}

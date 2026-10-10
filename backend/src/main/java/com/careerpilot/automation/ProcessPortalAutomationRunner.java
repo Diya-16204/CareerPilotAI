@@ -86,7 +86,9 @@ public class ProcessPortalAutomationRunner implements PortalAutomationRunner {
         JsonNode result;
         try{result=mapper.readTree(output);}
         catch(Exception ex){throw new AutomationExecutionException("The browser workflow returned an invalid result.",true);}
-        if(process.exitValue()!=0)throw new AutomationExecutionException("The simulated portal workflow failed.",result.path("outcomeMayBeUnknown").asBoolean(true));
+        if(process.exitValue()!=0)throw new AutomationExecutionException(
+                "The simulated portal workflow failed: "+result.path("diagnostic").asText("unknown browser error").substring(0,Math.min(300,result.path("diagnostic").asText("unknown browser error").length())),
+                result.path("outcomeMayBeUnknown").asBoolean(true));
         if(!result.path("independentlyVerified").asBoolean(false))throw new AutomationExecutionException("The saved submission could not be independently verified.",true);
         return new RunnerResult(java.util.UUID.fromString(result.path("confirmationId").asText()),
                 result.path("portalKey").asText(),result.path("jobKey").asText(),true);

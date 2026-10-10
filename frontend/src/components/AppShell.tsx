@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { Activity, BriefcaseBusiness, ChevronDown, CircleHelp, FileText, LayoutDashboard, Menu, Settings2, UserRound, X, PenLine, UserCog, ChartNoAxesCombined } from 'lucide-react'
+import { Activity, BriefcaseBusiness, ChevronDown, CircleHelp, FileText, LayoutDashboard, Menu, Settings2, UserRound, X, PenLine, UserCog, ChartNoAxesCombined, Workflow } from 'lucide-react'
 import { Brand } from './Brand'
 import { useAuth } from '../auth/AuthContext'
 
@@ -10,6 +10,7 @@ const links = [
   { to: '/app/resumes', label: 'Resume studio', icon: FileText },
   { to: '/app/cover-letters', label: 'Cover letters', icon: PenLine },
   { to: '/app/applications', label: 'Applications', icon: Activity },
+  { to: '/app/automation', label: 'Automation center', icon: Workflow },
   { to: '/app/profile', label: 'Profile & settings', icon: UserCog },
 ]
 

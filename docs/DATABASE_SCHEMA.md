@@ -21,7 +21,7 @@ PostgreSQL is the source of truth and Flyway migrations are authoritative. UUID 
 | `interview_sessions` | FK owner; role/topic/difficulty/state, score summary and start/end timestamps. |
 | `interview_answers` | FKs session/question; answer and rubric feedback; unique `(session_id, ordinal)`. |
 | `simulated_portal_submissions` | V6 table with FK owner; fictional portal/job identifiers, applicant, education/experience/cover-letter and screening data, PDF/DOCX bytes, owner-scoped idempotency, unique confirmation ID, and creation time. Unique identity index prevents repeat submissions for the same owner/portal/job/email. |
-| `automation_runs` | Planned; no migration/entity/API currently implements Playwright run state, retry outcome, or evidence history. |
+| `automation_runs` | V7 owner FK, fictional portal/job keys, `PENDING`/`RUNNING`/terminal status, owner-scoped idempotency key and SHA-256 request fingerprint, optional persisted submission confirmation, safe result message and lifecycle timestamps; owner/created and status/created indexes. |
 
 Delete policy: avoid cascading loss of application and audit history. Account deletion should be an explicit service transaction with a documented retention policy. Resume replacement creates a new immutable version. Status and automation history is append-only. Repositories must avoid loading large extracted text in list queries; DTO projections/page queries prevent N+1 behavior.
 
@@ -33,5 +33,7 @@ Delete policy: avoid cascading loss of application and audit history. Account de
 4. V4 adds interview question seeds.
 5. V5 adds profiles and owner-scoped job imports.
 6. V6 adds owner-scoped simulated portal submissions.
+7. V7 adds durable Playwright automation run history and idempotency fingerprints.
+8. V8 converts the existing resume checksum column from `CHAR(64)` to `VARCHAR(64)` without rewriting the applied V2 migration.
 
-Migration application and Hibernate validation have not yet been run against PostgreSQL in the current environment.
+All eight migrations have been validated and applied on the existing local PostgreSQL 18.6 database; Hibernate `ddl-auto=validate` passed. Flyway notes that PostgreSQL 18 is newer than its tested support through PostgreSQL 17.

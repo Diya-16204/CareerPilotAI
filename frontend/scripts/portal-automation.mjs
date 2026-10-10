@@ -2,7 +2,9 @@ import { chromium } from '@playwright/test'
 import { mkdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 
-const input = JSON.parse(await readFile(0, 'utf8'))
+let inputText = ''
+for await (const chunk of process.stdin) inputText += chunk
+const input = JSON.parse(inputText)
 let browser
 let page
 let submissionAttempted = false
@@ -38,7 +40,15 @@ try {
     await page.getByRole('button', { name: 'Review application' }).click()
   }
 
-  await page.locator('input[type="file"]').setInputFiles(input.resumeFile)
+  const resumeExtension = path.extname(input.resumeFileName).toLowerCase()
+  const resumeMimeType = resumeExtension === '.pdf'
+    ? 'application/pdf'
+    : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  await page.locator('input[type="file"]').setInputFiles({
+    name: input.resumeFileName,
+    mimeType: resumeMimeType,
+    buffer: await readFile(input.resumeFile),
+  })
   for (const [question, answer] of Object.entries(input.answers)) {
     await page.getByLabel(question).fill(answer)
   }
@@ -52,7 +62,7 @@ try {
   submissionAttempted = true
   await page.getByRole('button', { name: 'Confirm simulated submission' }).click()
   const response = await submissionResponse
-  if (!response.ok()) throw new Error('Submission endpoint rejected the simulated application.')
+  if (!response.ok()) throw new Error(`Submission endpoint returned HTTP ${response.status()}: ${(await response.text()).slice(0, 180)}`)
   const saved = await response.json()
 
   await page.getByRole('heading', { name: 'Application verified' }).waitFor({ state: 'visible' })
@@ -72,7 +82,7 @@ try {
     jobKey: verified.jobKey,
     independentlyVerified,
   }) + '\n')
-} catch {
+} catch (failure) {
   if (page && input.evidenceDirectory) {
     try {
       await mkdir(input.evidenceDirectory, { recursive: true })
@@ -82,8 +92,9 @@ try {
       evidenceFile = undefined
     }
   }
-  process.stdout.write(JSON.stringify({
+    process.stdout.write(JSON.stringify({
     error: 'The simulated portal workflow did not complete verification.',
+    diagnostic: failure instanceof Error ? failure.message.slice(0, 300) : 'Unknown browser workflow error.',
     outcomeMayBeUnknown: submissionAttempted,
     evidenceFile,
   }) + '\n')
