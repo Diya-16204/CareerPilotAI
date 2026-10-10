@@ -65,3 +65,13 @@ Status terms used: **Freshly verified**, **Implemented/unverified**, **Partial**
 1. Verify and refine the MySQL baseline against a provisioned isolated MySQL 8.4 instance; don't point at or mutate the PostgreSQL source.
 2. Design and test a checksum/row-count/file-aware PostgreSQL-to-MySQL import; source dump and resume-file backup are ready, but no import has been performed.
 3. Continue audited product/security gaps and add tests that do not require a live DB; then complete full MySQL-backed owner-isolation and integration tests once the runtime exists.
+
+## Deployment continuation (2026-10-10)
+
+- Latest deployment request and available project specification/audit/status were reviewed. Current observed HEAD is `49cf9fc0ac61ca85ce6a842661babcccfcd76881` on `main`, with `origin/main` matching at the beginning of work; the initial working tree was clean. Existing `.env`, PostgreSQL data, and backups were preserved. No Git commit or push was made.
+- Deployment guide at `docs/DEPLOYMENT.md` now documents the recommended Cloudflare Pages + Railway architecture, required dashboard settings, environment variables, safe migration gates, verification steps, current costs, and unverified items. Provider accounts and credentials were unavailable, Docker and MySQL were unavailable, and no service was deployed. No URL or charge exists.
+- The backend Docker image lacks Node/Playwright and its automation settings assume local Edge/loopback endpoints. Hosted Automation Center support is not available until this is separately designed and tested.
+- Fresh frontend test: Vitest 1/1 passed. Fresh production build: passed, 2,187 modules; JS/CSS sizes are captured in `IMPLEMENTATION_STATUS.md`.
+- Fresh Java 21 Maven Wrapper `clean verify`: passed 18 tests (0 failures/errors/skips), compiled 83 main and 8 test files, packaged executable JAR. The first sandbox execution was denied loopback access by two local HTTP-stub tests; the approved elevated verification completed successfully.
+- Added frontend/backend `.dockerignore` files to avoid packaging ignored environment files, local dependencies/build artifacts, and local data in container build contexts. They do not remove or modify any user data.
+- Remaining blockers: isolated MySQL 8.4 startup and migration validation; reviewed PostgreSQL-to-MySQL data/file import; owner authorization for provider accounts/billing; deployment and public smoke tests; hosted browser automation design. Existing known product gaps remain as listed in the master-spec audit and implementation status.
