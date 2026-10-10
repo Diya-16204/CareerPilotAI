@@ -16,7 +16,7 @@ CREATE TABLE resume_versions (
   storage_key VARCHAR(80) NOT NULL UNIQUE,
   original_file_name VARCHAR(255) NOT NULL,
   content_type VARCHAR(100) NOT NULL,
-  checksum_sha256 VARCHAR(64) NOT NULL,
+  checksum_sha256 CHAR(64) NOT NULL,
   extracted_text TEXT NOT NULL,
   extracted_email VARCHAR(254),
   extracted_phone VARCHAR(48),

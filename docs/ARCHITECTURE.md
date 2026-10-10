@@ -2,7 +2,7 @@
 
 ## System shape
 
-CareerPilot AI is a modular monolith. `backend/` is a Java 21-targeted Spring Boot 3.5.16 application organized by domain under `com.careerpilot`; the local Java 22 compiler emits Java 21 bytecode. `frontend/` is a strict TypeScript React 18 SPA served by Vite 6.4.3 in development and a static web server in deployment. PostgreSQL is the durable source of truth; Flyway owns schema changes.
+CareerPilot AI is a modular monolith. `backend/` is a Java 21 Spring Boot 3.5.16 application organized by domain under `com.careerpilot`, with a Maven Wrapper pinned to Maven 3.9.9. `frontend/` is a strict TypeScript React 18 SPA served by Vite 6.4.3 in development and a static web server in deployment. PostgreSQL is the durable source of truth; Flyway owns schema changes.
 
 ```text
 Browser (React, Router, typed Axios client)
@@ -10,14 +10,14 @@ Browser (React, Router, typed Axios client)
 Spring Security -> REST controllers -> domain services -> JPA repositories
                                                 |             |
                                      AI provider port     PostgreSQL/Flyway
-                                     deterministic local
+                                  local / OpenAI-compatible
 Portal UI -> authenticated simulation API -> owner-scoped submission records
 Future Playwright runner -> allowlisted simulated portal adapters
 ```
 
 ## Module boundaries
 
-`auth` handles credentials, access tokens and current-user identity; `user` owns editable profile and password changes; `resume` owns private files, parsed contact/skill hints and immutable versions; `jobs` owns seeded listings and user-provided imports; `matching` owns deterministic scoring/evidence; `ai` supplies a clearly labeled local template provider; `applications` owns status history and persisted summary metrics; `interview` owns question bank, sessions and local rubric evaluations; `portal` owns fictional submission validation, idempotency, storage, and sanitized verification. A Playwright runner, durable automation run history, and real-site adapters remain to be implemented. `common` holds API errors, paging and validation; `config` wires security, storage, AI, and OpenAPI.
+`auth` handles credentials, access tokens and current-user identity; `user` owns editable profile and password changes; `resume` owns private files, parsed contact/skill hints and immutable versions; `jobs` owns seeded listings and user-provided imports; `matching` owns deterministic scoring/evidence; `ai` supplies local and optional OpenAI-compatible cover-letter providers; `applications` owns status history and persisted summary metrics; `interview` owns question bank, sessions and local rubric evaluations; `portal` owns fictional submission validation, idempotency, storage, and sanitized verification. A Playwright runner, durable automation run history, and real-site adapters remain to be implemented. `common` holds API errors, paging and validation; `config` wires security, storage, AI, and OpenAPI.
 
 ## Security and data flow
 

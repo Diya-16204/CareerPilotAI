@@ -30,7 +30,7 @@ Base path: `/api/v1`. JSON, UTF-8. Authenticated requests use a short-lived bear
 | `PATCH /applications/{id}/status` | Required | `{status,note?,followUpAt?}` -> updated record and append-only history. |
 | `GET /analytics/summary` | Required | persisted counts/status distributions/recent activity; zero-data response is valid. |
 | `GET /cover-letters` | Required | paged owner-only cover-letter drafts. |
-| `POST /cover-letters/draft` | Required | `{jobId,resumeVersionId,tone}` -> explicitly labeled local template draft. |
+| `POST /cover-letters/draft` | Required | `{jobId,resumeVersionId,tone}` -> persisted draft labeled `LOCAL_TEMPLATE` or `OPENAI` according to the configured provider. |
 | `PUT /cover-letters/{id}` | Required | update the owner's draft body. |
 | `GET /interviews/questions` | Required | topic/difficulty filters and paging. |
 | `POST /interviews/sessions` | Required | role/topic/difficulty -> persisted session. |
@@ -41,4 +41,4 @@ Base path: `/api/v1`. JSON, UTF-8. Authenticated requests use a short-lived bear
 | `POST /simulated-portals/{portal}/submissions` | Required | `Idempotency-Key: UUID`; requires explicit consent, a validated PDF/DOCX attachment (base64, max 5 MB), applicant details, job key, and portal-specific fields (Portal A cover letter; Portal B education and experience; Portal C role-specific answers). Persists an owner-scoped simulation record and returns its confirmation ID. Replays and duplicate same-role submissions are rejected or return the existing confirmation. |
 | `GET /simulated-portals/submissions/{confirmationId}` | Required | owner-only sanitized verification response; returns `PERSISTED` only for a saved record. |
 
-OpenAPI is exposed through Swagger UI in development. Portal browser tests currently mock HTTP responses; actual migration and persistence verification require PostgreSQL and have not run. Portal routes are local simulations only and cannot submit to real employers. The Playwright suite exercises each form and independently checks the confirmation response, but it does not yet drive the UI against the live backend/database.
+OpenAPI is exposed through Swagger UI in development. The default portal browser suite mocks HTTP responses; a separate opt-in live Portal A test drives the UI against Spring API and PostgreSQL. PostgreSQL migrations and core persistence paths have been verified locally. Portal routes are local simulations only and cannot submit to real employers. Durable Playwright run orchestration/history is not implemented yet.

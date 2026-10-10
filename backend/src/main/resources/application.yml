@@ -40,6 +40,15 @@ app:
     model: ${AI_MODEL:gpt-4.1-mini}
     timeout-seconds: ${AI_TIMEOUT_SECONDS:20}
     max-input-characters: ${AI_MAX_INPUT_CHARACTERS:20000}
+  automation:
+    frontend-url: ${CAREERPILOT_AUTOMATION_FRONTEND_URL:http://127.0.0.1:4173}
+    api-base-url: ${CAREERPILOT_AUTOMATION_API_BASE_URL:http://localhost:8080/api/v1}
+    node-executable: ${CAREERPILOT_AUTOMATION_NODE:node}
+    runner-script: ${CAREERPILOT_AUTOMATION_SCRIPT:../frontend/scripts/portal-automation.mjs}
+    frontend-directory: ${CAREERPILOT_AUTOMATION_FRONTEND_DIRECTORY:../frontend}
+    browser: ${CAREERPILOT_AUTOMATION_BROWSER:msedge}
+    timeout-seconds: ${CAREERPILOT_AUTOMATION_TIMEOUT_SECONDS:90}
+    evidence-directory: ${CAREERPILOT_AUTOMATION_EVIDENCE:../.tools/automation-evidence}
   upload:
     directory: ${UPLOAD_DIR:./data/uploads/resumes}
   jwt:
