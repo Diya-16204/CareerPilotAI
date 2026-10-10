@@ -1,14 +1,15 @@
 services:
   db:
-    image: postgres:16-alpine
+    image: mysql:8.4
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-careerpilot}
-      POSTGRES_USER: ${POSTGRES_USER:-careerpilot}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-locally}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-careerpilot}
+      MYSQL_USER: ${MYSQL_USER:-careerpilot}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
     volumes:
-      - careerpilot-postgres:/var/lib/postgresql/data
+      - careerpilot-mysql:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-careerpilot} -d ${POSTGRES_DB:-careerpilot}"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -16,10 +17,10 @@ services:
   backend:
     build: ./backend
     environment:
-      DATABASE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-careerpilot}
-      DATABASE_USERNAME: ${POSTGRES_USER:-careerpilot}
-      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-change-me-locally}
-      JWT_SECRET: ${JWT_SECRET:-local-development-secret-change-this-to-a-random-value-32-bytes-min}
+      DATABASE_URL: jdbc:mysql://db:3306/${MYSQL_DATABASE:-careerpilot}?useSSL=false&allowPublicKeyRetrieval=true&connectionTimeZone=UTC
+      DATABASE_USERNAME: ${MYSQL_USER:-careerpilot}
+      DATABASE_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
       JWT_EXPIRATION_SECONDS: ${JWT_EXPIRATION_SECONDS:-900}
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
     depends_on:
@@ -45,3 +46,4 @@ services:
 
 volumes:
   careerpilot-postgres:
+  careerpilot-mysql:

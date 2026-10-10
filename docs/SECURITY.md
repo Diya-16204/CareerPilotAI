@@ -2,7 +2,7 @@
 
 ## Implemented baseline
 
-Implemented controls include BCrypt password hashing, short-lived JWT access tokens, server-side owner filtering, validated DTOs, centralized safe errors, resume size/content checks, private generated storage keys, restrictive CORS, and environment-provided secrets. No rate limiter or production-grade structured audit logging is implemented yet. The simulated portal API requires authentication to submit and verify; public job listings contain fictional data only. Verification responses omit applicant details. Portal submissions store applicant contact fields and PDF/DOCX bytes in PostgreSQL for the signed-in owner; configure access controls, encryption at rest, and retention/deletion before production use.
+Implemented controls include BCrypt password hashing, short-lived JWT access tokens, server-side owner filtering, validated DTOs, centralized safe errors, resume size/content checks, private generated storage keys, restrictive CORS, and environment-provided secrets. JWT signing now has no predictable default and rejects missing/weak secrets and non-positive lifetimes; set `JWT_SECRET` to a cryptographically random value of at least 32 bytes before startup. No rate limiter or production-grade structured audit logging is implemented yet. The simulated portal API requires authentication to submit and verify; public job listings contain fictional data only. Verification responses omit applicant details. Portal submissions store applicant contact fields and PDF/DOCX bytes in the configured database for the signed-in owner; configure access controls, encryption at rest, and retention/deletion before production use.
 
 ## Constraints and hardening
 

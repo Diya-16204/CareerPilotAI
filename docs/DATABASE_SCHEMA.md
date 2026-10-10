@@ -1,6 +1,6 @@
 # Database Schema
 
-PostgreSQL is the source of truth and Flyway migrations are authoritative. UUID primary keys and UTC `timestamptz` audit fields are used. User-owned records have a non-null `user_id`; APIs derive it from the authenticated principal rather than accepting it from request bodies.
+MySQL 8.4 is the configured application database and `db/migration/mysql` is its Flyway baseline. UUID primary keys use `BINARY(16)` and audit timestamps use UTC `TIMESTAMP(6)`. User-owned records have a non-null owner key; APIs derive it from the authenticated principal rather than accepting it from request bodies. Existing PostgreSQL migration files V1–V8 are preserved as historical/source schema; no PostgreSQL data has yet been imported into MySQL.
 
 | Table | Relationships and constraints |
 |---|---|
@@ -36,4 +36,4 @@ Delete policy: avoid cascading loss of application and audit history. Account de
 7. V7 adds durable Playwright automation run history and idempotency fingerprints.
 8. V8 converts the existing resume checksum column from `CHAR(64)` to `VARCHAR(64)` without rewriting the applied V2 migration.
 
-All eight migrations have been validated and applied on the existing local PostgreSQL 18.6 database; Hibernate `ddl-auto=validate` passed. Flyway notes that PostgreSQL 18 is newer than its tested support through PostgreSQL 17.
+Historical evidence: all eight migrations were validated and applied on the existing local PostgreSQL 18.6 database; Hibernate `ddl-auto=validate` passed. The current environment has no MySQL server or Docker, so the MySQL baseline and Hibernate schema validation have not yet been executed against MySQL.

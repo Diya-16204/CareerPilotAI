@@ -23,7 +23,7 @@ public class SimulatedPortalSubmission {
     @Column(columnDefinition="text") private String experience;
     @Column(name="cover_letter",columnDefinition="text") private String coverLetter;
     @Column(name="resume_file_name",length=255) private String resumeFileName;
-    @Column(name="resume_bytes",columnDefinition="bytea") private byte[] resumeBytes;
+    @Column(name="resume_bytes",columnDefinition="longblob") private byte[] resumeBytes;
     @Column(name="answers_json",nullable=false,columnDefinition="text") private String answersJson;
     @Column(name="idempotency_key",nullable=false) private UUID idempotencyKey;
     @Column(name="confirmation_id",nullable=false,unique=true) private UUID confirmationId;

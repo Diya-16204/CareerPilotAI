@@ -25,6 +25,7 @@ public class JwtService {
                       ObjectMapper mapper) {
         this.secret = secret.getBytes(StandardCharsets.UTF_8);
         if (this.secret.length < 32) throw new IllegalArgumentException("JWT secret must contain at least 32 bytes.");
+        if (expirationSeconds < 1) throw new IllegalArgumentException("JWT expiration must be a positive number of seconds.");
         this.expirationSeconds = expirationSeconds;
         this.mapper = mapper;
     }

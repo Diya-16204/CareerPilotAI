@@ -2,7 +2,7 @@
 
 ## Initial scope and dependencies
 
-Implement a modular monolith (Spring Boot + PostgreSQL/Flyway) with a Vite React/TypeScript client. Keep the deterministic core usable without an AI key. Data ownership, migrations, and documented API contracts underpin all user workflows. Portal automation depends on application persistence and is always opt-in and simulated.
+Implement a modular monolith (Java 21 Spring Boot + MySQL/Flyway) with a Vite React JavaScript client. Keep the deterministic core usable without an AI key. Data ownership, migrations, and documented API contracts underpin all user workflows. Portal automation depends on application persistence and is always opt-in and simulated. Existing PostgreSQL migration/data are retained separately; the MySQL baseline is not yet runtime-verified.
 
 ## Build order and acceptance criteria
 
@@ -10,7 +10,7 @@ Implement a modular monolith (Spring Boot + PostgreSQL/Flyway) with a Vite React
 |---|---|---|---|
 | 0 Inspect | Inspect files, Git, and toolchain; record baseline | None | `IMPLEMENTATION_STATUS.md` contains observed state |
 | 1 Plan | Architecture, relational model, API/error contract, gates | Phase 0 | Architecture/API/schema docs agree |
-| 2 Setup | React/Vite/TypeScript/Tailwind, Spring Boot/Maven, env, Compose | Phase 1 | Frontend build and backend package succeed |
+| 2 Setup | React/Vite/JavaScript/Tailwind, Spring Boot/Maven, env, Compose | Phase 1 | Frontend build and backend package succeed |
 | 3 Common/data | DTOs, validation, error handling, Flyway, entities/repositories | Phase 2 | Migration initializes; persistence tests pass |
 | 4 Auth | Registration/login/current-user, JWT, ownership | Phase 3 | Auth and cross-user isolation tests pass |
 | 5 Frontend | Design system, navigation, auth, dashboard, typed API | Phases 2–4 | Type check/build; API-backed empty states |
@@ -31,7 +31,7 @@ Prefix: `/api/v1`. JSON requests/responses; ISO-8601 UTC timestamps. Protected r
 
 ## Verification commands
 
-Commands depend on installed tools. Expected commands: `npm ci`, `npm run typecheck`, `npm test`, `npm run build`; `mvnw test`, `mvnw verify`; and `docker compose config` / `docker compose up --build`. Record only commands actually run and their observed results in the status file. Current inspection found npm and Git, but no Maven or Docker; Java version remains to be checked.
+Commands depend on installed tools. Expected frontend commands: `npm ci`, `npm test`, `npm run build`, and mocked `npm run test:e2e`; backend commands: `mvnw test`, `mvnw verify`; runtime acceptance additionally requires MySQL 8.4 and Docker Compose config/runtime validation. Record only commands actually run and their observed results in the status file. Current machine has Node/npm and Java 21 through the ignored local JDK; Maven Wrapper is available, while MySQL and Docker are absent. See `docs/MIGRATION_PROGRESS.md` for test evidence and blockers.
 
 ## Data relationships
 

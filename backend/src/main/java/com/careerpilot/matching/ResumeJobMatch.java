@@ -20,7 +20,7 @@ public class ResumeJobMatch {
     @ManyToOne(fetch=FetchType.LAZY,optional=false) @JoinColumn(name="job_id",nullable=false) private Job job;
     @Column(nullable=false) private int score;
     @Column(name="formula_version",nullable=false,length=32) private String formulaVersion;
-    @JdbcTypeCode(SqlTypes.JSON) @Column(name="result_json",nullable=false,columnDefinition="jsonb") private Map<String,Object> resultJson;
+    @JdbcTypeCode(SqlTypes.JSON) @Column(name="result_json",nullable=false,columnDefinition="json") private Map<String,Object> resultJson;
     @CreationTimestamp @Column(name="created_at",nullable=false,updatable=false) private Instant createdAt;
     protected ResumeJobMatch(){}
     public ResumeJobMatch(UserAccount user,ResumeVersion version,Job job,int score,String formulaVersion,Map<String,Object> result){this.user=user;resumeVersion=version;this.job=job;this.score=score;this.formulaVersion=formulaVersion;resultJson=result;}

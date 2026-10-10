@@ -2,6 +2,19 @@
 
 Updated: 2026-10-10 (Asia/Calcutta)
 
+## Current continuation status — JavaScript/MySQL request
+
+This section supersedes the older TypeScript/PostgreSQL setup statements below for the current code/configuration. Historical PostgreSQL integration results remain historical evidence only.
+
+- Frontend source, tests, Vite config, and Playwright config are JavaScript/JSX now. TypeScript-specific config and app type declarations were removed; the frontend has no TypeScript build/typecheck script. Runtime Zod validation remains.
+- Backend remains Java 21 + Spring Boot 3.5.16 + Maven Wrapper. The application now uses MySQL Connector/J, `flyway-mysql`, `classpath:db/migration/mysql`, and a new `V1__careerpilot_mysql_baseline.sql`. PostgreSQL migration files V1–V8 remain unchanged.
+- MySQL 8.4 server, client, Docker, and Compose are absent; no listener is available on 3306. Therefore MySQL migration execution, Hibernate schema validation against MySQL, DB/API integration, and Compose runtime are **not verified**. The MySQL schema migration has not been applied and existing PostgreSQL records have not been imported.
+- Existing PostgreSQL 5433 remains unchanged. A custom-format backup under ignored `.tools/backups` was verified with `pg_restore --list`. The live DB had 14 users, 6 jobs, 12 resumes, 0 applications, 11 automation runs and 8 simulated portal submissions at read-only count time. Separately stored resume files: 13 files / 10,283 bytes; the ignored copy at `.tools/backups/careerpilot-resume-files-20261010T1053` has 13/13 relative paths and SHA-256 matches. Neither source was changed.
+- Fresh frontend evidence after conversion: `npm test` passed (1 test); `npm run build` passed (2,187 modules); Microsoft Edge mocked E2E on an isolated Vite 4175 server passed 4 tests and skipped 2 opt-in live tests. The initial attempt against pre-existing Vite 4173 failed because that older server served stale TS entry files; it was left running and the isolated rerun passed.
+- Fresh backend evidence: Java `21.0.12.1`; `backend\\mvnw.cmd -B clean verify -f backend\\pom.xml` freshly compiled 83 main and 8 test source files, passed 18 tests, 0 failures, 0 errors and 0 skipped, and created the executable JAR. Added JWT missing/weak-secret and invalid-lifetime coverage. This proves Maven dependency resolution, compile, unit tests and packaging only—not MySQL runtime compatibility.
+- Compose and CI config now target MySQL 8.4 and the frontend JS scripts. Neither CI nor Compose was run here. Docker remains unavailable.
+- The prior historical milestone details below, including PostgreSQL integration reports, must not be interpreted as verification of the newly configured MySQL backend.
+
 ## Initial state (verified before implementation)
 
 - Intended workspace: `C:\Users\Sach\Downloads\SHAMBHU\Projects\CareerPilot`. The command runner and filesystem responded.
