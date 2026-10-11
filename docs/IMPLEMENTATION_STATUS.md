@@ -1,5 +1,15 @@
 # Implementation Status
 
+## Resume ATS scoring and Auto Apply continuation (2026-10-11)
+
+- Added a deterministic, content-based ATS estimate for readable extracted resume versions. General mode scores extracted contact fields, recognizable section headings, year-like dates, text length, and extreme token repetition. Job-specific mode compares normalized resume text/skills to a selected visible job or pasted description, reports matched/missing/partial terms, skill gaps, score categories, formula, caveats, and suggestions. Weighted categories are configurable with `ATS_WEIGHT_*` environment variables and defaults total 1.0.
+- Added authenticated owner-scoped analyze/history APIs at `/api/v1/resumes/{resumeId}/versions/{versionId}/ats-analyses`. Results are persisted in `resume_analyses`; the additive MySQL migration is `V2__resume_ats_analyses.sql`. It stores analysis output and ownership references, not resume text. Migration was not run and no database was accessed.
+- Resume Studio now offers general or job-specific analysis, existing job selection/description paste, score breakdown, findings, skill gaps, suggestions, and up to 20 selectable saved analyses.
+- Auto Apply remains a consent-gated, persisted simulation against fictional test portals. The backend only reports verified success after checking the portal's persisted confirmation. There are no registered real employer-site adapters or real-job application URLs; real-site auto-apply is not implemented or verified and must not be represented as operational.
+- Follow-up error investigation: a Java process was observed listening on port 8080 (PID 31448) with start time 12:48 on 2026-10-11. The ATS service source was written at 13:17 and its compiled class at 13:19, so the live backend process predates and cannot contain the new ATS endpoint. Vite on 5173 returned HTTP 200 and `/actuator/health` on 8080 reported UP. An unauthenticated ATS history probe returned 401 (authentication filter response; not an authenticated endpoint integration test). Restart the backend from the same environment so it loads the ATS code and applies the additive Flyway V2 table migration.
+- Verification in this continuation: Temurin Java `21.0.12.1`; `backend\\mvnw.cmd -B test` passed 24 tests (0 failures/errors/skips); `frontend\\npm run build` passed with Vite 6.4.3 (2,188 modules); `frontend\\npm test` passed (1 file, 1 test). These runs compile the ATS integration and bundle/test the UI. No backend service was started, no Flyway migration was applied, and no MySQL connection was made.
+- Earlier user work in `frontend/src/App.jsx`, `frontend/src/components/AppShell.jsx`, and `frontend/src/pages/ReferralPage.jsx` was preserved.
+
 Updated: 2026-10-11 (Asia/Calcutta)
 
 ## Environment and local deployment recheck (2026-10-11)

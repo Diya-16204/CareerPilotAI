@@ -34,6 +34,14 @@ management:
       probes:
         enabled: true
 app:
+  ats:
+    weights:
+      required-skills: ${ATS_WEIGHT_REQUIRED_SKILLS:0.40}
+      preferred-skills: ${ATS_WEIGHT_PREFERRED_SKILLS:0.15}
+      relevant-experience: ${ATS_WEIGHT_RELEVANT_EXPERIENCE:0.15}
+      projects-certifications: ${ATS_WEIGHT_PROJECTS_CERTIFICATIONS:0.10}
+      education: ${ATS_WEIGHT_EDUCATION:0.10}
+      role-keywords: ${ATS_WEIGHT_ROLE_KEYWORDS:0.10}
   ai:
     provider: ${AI_PROVIDER:local}
     base-url: ${AI_BASE_URL:https://api.openai.com}
