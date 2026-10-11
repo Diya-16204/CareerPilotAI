@@ -29,16 +29,23 @@ export function AutomationPage() {
     const activeRuns = useMemo(() => runs.filter((run) => isActive(run.status)), [runs]);
     useEffect(() => {
         let current = true;
-        Promise.all([careerApi.resumes(), careerApi.automationRuns()])
-            .then(([resumeItems, runPage]) => {
+        Promise.allSettled([careerApi.resumes(), careerApi.automationRuns()])
+            .then(([resumeResult, runResult]) => {
             if (!current)
                 return;
-            setResumes(resumeItems);
-            setRuns(runPage.items);
-            setResumeId(resumeItems[0]?.id ?? '');
+            if (resumeResult.status === 'fulfilled') {
+                const resumeItems = resumeResult.value;
+                setResumes(resumeItems);
+                setResumeId(resumeItems[0]?.id ?? '');
+            }
+            else {
+                setError(apiMessage(resumeResult.reason));
+            }
+            if (runResult.status === 'fulfilled')
+                setRuns(runResult.value.items);
+            else if (resumeResult.status === 'fulfilled')
+                setError(`Resume list loaded, but automation history could not be loaded: ${apiMessage(runResult.reason)}`);
         })
-            .catch((reason) => { if (current)
-            setError(apiMessage(reason)); })
             .finally(() => { if (current)
             setLoading(false); });
         return () => { current = false; };
