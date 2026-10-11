@@ -6,9 +6,10 @@ Updated: 2026-10-11
 
 - Backend: Spring Boot 3.5.16 / Java 21 on a Render Docker web service. The Dockerfile is only for hosted deployment; local Windows development continues to use Java 21 and `backend\mvnw.cmd` without Docker.
 - Database: existing Aiven MySQL 8.4 service. Do not point deployment at the local database or change the root `.env`.
-- Frontend: Vite static site on Vercel, configured after the API is deployed.
+- Frontend: Vite static site on Vercel: https://career-pilot-ai-blond-seven.vercel.app/.
+- Backend: https://careerpilotai-he15.onrender.com.
 
-The user reports that Aiven connectivity and the Flyway migrations were verified. That is not independently rechecked by this deployment preparation. No hosted service was created or deployed in this task.
+The owner reports that Aiven connectivity and Flyway migrations were verified. On 2026-10-11, the deployed frontend homepage returned HTTP 200, backend readiness returned `UP`, and `GET /api/v1/jobs` returned HTTP 200 with `Access-Control-Allow-Origin` set to the Vercel origin. Authenticated application flows have not been verified. Direct navigation to `/login` returned Vercel `404`; `frontend/vercel.json` now adds a SPA fallback, but that fix is not live until Vercel rebuilds the latest commit.
 
 ## Deploy the backend on Render
 
@@ -34,10 +35,10 @@ The Docker image runs as a non-root user. Its upload directory is writable, but 
 
 ### Render backend smoke checks
 
-After Render shows the deploy as live, replace the placeholder with the assigned host:
+After Render shows the deploy as live, check its readiness:
 
 ```powershell
-$api = 'https://<your-render-service>.onrender.com'
+$api = 'https://careerpilotai-he15.onrender.com'
 Invoke-RestMethod "$api/actuator/health/readiness"
 ```
 
@@ -50,7 +51,7 @@ Then use the frontend to register/sign in and check authenticated profile, jobs,
 3. Add this public API base URL in the Vercel project's environment variables for Production (and Preview only if previews should call the same API):
 
 ```text
-VITE_API_BASE_URL=https://<your-render-service>.onrender.com/api/v1
+VITE_API_BASE_URL=https://careerpilotai-he15.onrender.com/api/v1
 ```
 
 4. Deploy the frontend. Copy its exact HTTPS origin (scheme + host, no path) into Render's `FRONTEND_ORIGIN`, then redeploy the backend. The backend CORS configuration accepts the single configured origin.

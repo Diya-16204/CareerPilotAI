@@ -4,6 +4,14 @@ CareerPilot AI is a full-stack career management application built with React Ja
 
 This repository is an active, incomplete implementation. The requirement-by-requirement audit, environment inventory, historical test evidence, remaining work, and security findings are in [docs/PROJECT_AUDIT.md](docs/PROJECT_AUDIT.md). The PostgreSQL migration history and data are preserved; the application uses an independent MySQL Flyway baseline. Apply the MySQL migrations only after configuring and verifying the intended local MySQL database. See [docs/MIGRATION_PROGRESS.md](docs/MIGRATION_PROGRESS.md) for observed state and limitations. The protected Automation Center runs consented Playwright simulations against fictional portals; it does not apply to real employers.
 
+## Live deployment
+
+- Frontend: [https://career-pilot-ai-blond-seven.vercel.app](https://career-pilot-ai-blond-seven.vercel.app/)
+- Backend readiness: [https://careerpilotai-he15.onrender.com/actuator/health/readiness](https://careerpilotai-he15.onrender.com/actuator/health/readiness)
+- Database: Aiven MySQL 8.4 (connection and migrations reported verified by the project owner).
+
+The live frontend and backend were checked on 2026-10-11: the frontend homepage returned HTTP 200, backend readiness returned `UP`, and the public jobs API returned HTTP 200 with CORS allowing the Vercel origin. Client-side navigation to sign-in and registration rendered; direct URL refresh at `/login` returned Vercel 404. `frontend/vercel.json` now configures the SPA fallback, but that fix is not live until Vercel deploys a commit containing it. Authenticated workflows have not been verified in the deployed environment. Render Free sleeps when idle and uses ephemeral storage; resume uploads are not durable. The Automation Center's Node/Playwright worker is not included in the hosted Java backend image. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for setup and limitations.
+
 ## Requirements
 
 - Node.js 20+ and npm.

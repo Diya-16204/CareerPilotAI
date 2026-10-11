@@ -1,5 +1,14 @@
 # Implementation Status
 
+## Live Vercel/Render check (2026-10-11)
+
+- Opened `https://career-pilot-ai-blond-seven.vercel.app/`: homepage rendered with title `CareerPilot AI — Your career, in motion`; HTTP GET returned 200.
+- Confirmed the deployed JavaScript bundle contains the Render API base URL `https://careerpilotai-he15.onrender.com/api/v1`.
+- `GET https://careerpilotai-he15.onrender.com/actuator/health/readiness` returned HTTP 200 and `{"status":"UP"}`.
+- `GET https://careerpilotai-he15.onrender.com/api/v1/jobs` returned HTTP 200; response header `Access-Control-Allow-Origin` matched `https://career-pilot-ai-blond-seven.vercel.app`.
+- Direct navigation to `https://career-pilot-ai-blond-seven.vercel.app/login` returned Vercel `404 NOT_FOUND`. Added `frontend/vercel.json` to rewrite SPA routes to `/index.html`. This correction has not been deployed or verified live yet.
+- Updated README and deployment guide with the supplied public site and observed backend/API results. No account was created, credentials entered, or user data written. Authenticated flows (registration/login, profile, saved jobs, resume, cover letter, referrals, application tracking, interview, analytics, automation) are not verified against the hosted database. The requested all-feature audit therefore remains incomplete until a test account/session is available and the rewrite is deployed.
+
 ## Render + Aiven deployment preparation (2026-10-11)
 
 - Added `backend/Dockerfile`: multi-stage Java 21 build, Maven Wrapper `verify`, runtime JRE, non-root UID/GID, writable `/tmp/careerpilot/uploads`, and Spring Boot entrypoint. This is deployment-only; local Windows development remains Docker-free.
