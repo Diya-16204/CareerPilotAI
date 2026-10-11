@@ -1,6 +1,18 @@
 # Implementation Status
 
-Updated: 2026-10-10 (Asia/Calcutta)
+Updated: 2026-10-11 (Asia/Calcutta)
+
+## Environment and local deployment recheck (2026-10-11)
+
+- Rechecked tools rather than relying on the previous environment report. Docker/Docker Compose, MySQL client/server, and the checked host deploy CLIs (`gh`, `aws`, `az`, `gcloud`, `wrangler`, `vercel`, `netlify`, `railway`, `flyctl`) are unavailable. No matching Docker/MySQL Windows services or standard install paths were found, and no listener was observed on 3306/33060. PostgreSQL is listening on 5432; no PostgreSQL files, data, or services were modified.
+- Global `java` resolves to Oracle Java 22.0.2. The project-compatible Microsoft JDK 21.0.12.1 remains available in ignored `.tools`; Node 20.16.0/npm 10.8.1 are available. No provider credential environment-variable names were present and available Codex browser sessions had no open tabs, so provider authentication was not established. No billable resource or hosted setting was created or changed.
+- Re-inspected Compose, both Dockerfiles, nginx, `.env.example`, the MySQL V1 baseline, and automation worker/configuration. Compose keeps the legacy `careerpilot-postgres` volume declaration separate and unused; MySQL data uses `careerpilot-mysql`. Compose did not previously persist uploaded resume files, and the non-root Java image had no pre-owned upload directory. Added a `careerpilot-uploads` volume mounted at `/data`, explicit `UPLOAD_DIR=/data/uploads/resumes`, and a pre-created `/data` owned by the `app` user in the backend image. This is code-level configuration only; volume initialization, permissions, health checks, and container startup remain unverified because Docker is absent.
+- Added `.env.compose.example` so a user can create a separate ignored `.env.compose.local` for Compose. The existing PostgreSQL-oriented `.env` remains untouched. Documentation passes this explicit file to Compose and avoids printing expanded secrets with `config --quiet`.
+- Static config checks passed: PyYAML 6.0.3 parsed `docker-compose.yml`; assertions verified MySQL 8.4, the healthy DB dependency, separate MySQL/upload volumes, frontend API proxy/build value, and upload directory ownership setup before `USER app`. `.env.compose.local` is ignored and `git diff --check` passed. These checks do not replace Docker Compose validation or an image/runtime test.
+- MySQL 8.4 is unavailable, so the MySQL Flyway migration was not applied and Hibernate schema validation, API workflows, and Compose startup were not run. No PostgreSQL dump was imported. Existing backups and source records remain preserved.
+- Cloudflare Pages + Railway remains the documented target; no provider authentication was confirmed. `docs/DEPLOYMENT.md` now records current environment evidence, Compose command instructions, the separate local env-file path, verified upload persistence corrections, and the Automation Center's specific hosted architecture/security gaps. `docs/MIGRATION_PROGRESS.md` carries the same current continuation evidence.
+- Git was observed at `49cf9fc0ac61ca85ce6a842661babcccfcd76881` at the beginning of this recheck and later at `b95da60664122ffd616a56c59cfa98552513f0ef`, matching `origin/main`. The latter `Commiting` commit was not created by this continuation; its files were retained. The current changes remain uncommitted.
+- Current files changed in this continuation: `.gitignore`, `.env.compose.example`, `docker-compose.yml`, `backend/Dockerfile`, `docs/DEPLOYMENT.md`, `docs/IMPLEMENTATION_STATUS.md`, and `docs/MIGRATION_PROGRESS.md`. Existing deployment/status edits and both `.dockerignore` files from earlier work were preserved. No commit or push was made by this continuation.
 
 ## Current continuation status — JavaScript/MySQL request
 

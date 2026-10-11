@@ -23,6 +23,9 @@ services:
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
       JWT_EXPIRATION_SECONDS: ${JWT_EXPIRATION_SECONDS:-900}
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
+      UPLOAD_DIR: /data/uploads/resumes
+    volumes:
+      - careerpilot-uploads:/data
     depends_on:
       db:
         condition: service_healthy
@@ -45,5 +48,8 @@ services:
         condition: service_healthy
 
 volumes:
+  # Keep the old PostgreSQL volume declaration so existing local volume data
+  # remains discoverable; this Compose project never mounts it to a service.
   careerpilot-postgres:
   careerpilot-mysql:
+  careerpilot-uploads:

@@ -7,6 +7,7 @@ RUN mvn -q -DskipTests package
 
 FROM eclipse-temurin:21-jre-alpine
 RUN addgroup -S app && adduser -S app -G app
+RUN mkdir -p /data/uploads/resumes && chown -R app:app /data
 WORKDIR /app
 COPY --from=build /workspace/target/careerpilot-api-0.1.0-SNAPSHOT.jar app.jar
 USER app
