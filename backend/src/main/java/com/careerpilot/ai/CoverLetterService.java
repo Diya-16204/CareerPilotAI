@@ -23,7 +23,7 @@ public class CoverLetterService {
     public Response generate(UUID owner,GenerateRequest request){
         ResumeVersion version=versions.findById(request.resumeVersionId()).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Resume version not found."));
         if(resumes.findByIdAndUser_Id(version.getResumeId(),owner).isEmpty())throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Resume version not found.");
-        Job job=jobs.findById(request.jobId()).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Job not found."));
+        Job job=jobs.findVisibleById(request.jobId(),owner).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Job not found."));
         List<String> verified=version.getSkillsText().isBlank()?List.of():Arrays.stream(version.getSkillsText().split(",")).map(String::trim).filter(s->!s.isBlank()).distinct().toList();
         String candidate=users.findById(owner).orElseThrow().getDisplayName();
         AiProvider.Draft draft=provider.generateCoverLetter(candidate,job.getTitle(),job.getCompany(),job.getDescription(),version.getExtractedText(),verified,request.tone());

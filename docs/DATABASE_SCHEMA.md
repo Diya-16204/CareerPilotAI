@@ -36,4 +36,4 @@ Delete policy: avoid cascading loss of application and audit history. Account de
 7. V7 adds durable Playwright automation run history and idempotency fingerprints.
 8. V8 converts the existing resume checksum column from `CHAR(64)` to `VARCHAR(64)` without rewriting the applied V2 migration.
 
-Historical evidence: all eight migrations were validated and applied on the existing local PostgreSQL 18.6 database; Hibernate `ddl-auto=validate` passed. The current environment has no MySQL server or Docker, so the MySQL baseline and Hibernate schema validation have not yet been executed against MySQL.
+Historical evidence: all eight migrations were validated and applied on the existing local PostgreSQL 18.6 database; Hibernate `ddl-auto=validate` passed. The MySQL baseline and Hibernate schema validation have not yet been executed against MySQL.

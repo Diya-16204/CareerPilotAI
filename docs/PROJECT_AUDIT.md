@@ -10,9 +10,9 @@ CareerPilot is a substantial but unfinished full-stack application. The frontend
 
 The main implemented user paths are account creation/sign-in, profile editing, resume upload and limited extraction/review, job listing/import/saving, deterministic resume-to-job skill matching, cover-letter drafting/editing, deterministic interview practice, application tracking, persisted analytics, fictional-portal submission, and an approval-gated local Playwright Automation Center. AI is only used for optional cover-letter drafting; the default is a clearly labeled deterministic template. There is no resume rewriting, AI question generation, or AI interview evaluation. No real employer integration is registered or submitted.
 
-The project is not production-ready. Coverage is concentrated in service tests and selected workflows, rather than controller/security/database integration and full user journeys. Application tracking omits several requested fields and workflows, the resume parser is a narrow text/skill extractor, and logout only clears the in-memory browser token. Rate limiting, refresh/revocation, upload malware scanning, retention/encryption policy, production secret enforcement, deployment, and Docker verification remain gaps.
+The project is not production-ready. Coverage is concentrated in service tests and selected workflows, rather than controller/security/database integration and full user journeys. Application tracking omits several requested fields and workflows, the resume parser is a narrow text/skill extractor, and logout only clears the in-memory browser token. Rate limiting, refresh/revocation, upload malware scanning, retention/encryption policy, production secret enforcement, deployment, and deployment verification remain gaps.
 
-At audit time the command runner and filesystem work, Git is available, Java 21/Maven Wrapper and frontend dependencies are locally available, and PostgreSQL 18.6 binaries exist. Docker is unavailable. No listener was found on ports 8080, 8081, 4173, 4174, 5432, or 5433; `pg_ctl status` reports no PostgreSQL server. Earlier test and integration claims below are explicitly identified as prior evidence, not audit-time reruns.
+At audit time the command runner and filesystem work, Git is available, Java 21/Maven Wrapper and frontend dependencies are locally available, and PostgreSQL 18.6 binaries exist. No listener was found on ports 8080, 8081, 4173, 4174, 5432, or 5433; `pg_ctl status` reports no PostgreSQL server. Earlier test and integration claims below are explicitly identified as prior evidence, not audit-time reruns.
 
 ## B. Specification source and requirement-by-requirement audit
 
@@ -40,7 +40,7 @@ I located and read the full original master prompt at `C:\Users\Sach\.codex\atta
 | Analytics/dashboard | Persisted application/interview outcomes, recent activity and useful empty state; no fake metrics | Partial | `applications/ApplicationService.java` (`summary`), `ApplicationController.java`, `DashboardPage.tsx`, `AnalyticsPage.tsx` | Earlier API returned persisted application/interview counts; frontend uses Recharts | Analytics is limited to applications by status, interview totals/answers, and recent application updates; no match history/common skill gaps/follow-ups/automation outcome aggregation. Add query and cross-module tests |
 | API errors, validation, ownership | Consistent safe error body, validation, status codes and per-user access | Partial | `common/ApiExceptionHandler.java`, `ApiErrorWriter.java`, DTOs, repositories/services, `SecurityConfig.java` | Service tests and historical 401/404 owner checks | No comprehensive MockMvc suite; verify every ID-based resource and malformed request; some paging parameters clamp instead of reject; confirm unexpected error messages do not leak |
 | Security/privacy | Secure defaults, safe uploads, data minimization, CORS/CSRF, abuse controls and documented limits | Partial | `SecurityConfig.java`, `JwtService.java`, `ResumeParser.java`, `ResumeStorage.java`, `.gitignore`, `docs/SECURITY.md` | `.env` is ignored and not tracked; targeted source scan found no committed private-key/API-key pattern; bearer token stored in JS memory | No rate limit, refresh/revocation, production secret profile, malware scanning, at-rest encryption/retention deletion policy, or AI disclosure consent. Local JWT/database fallback credentials must never be used in deployment |
-| Docker/deployment/CI | Compose with DB volume/health, app images, CI, deployment notes, tested configuration | Partial / Unverified | `docker-compose.yml`, `backend/Dockerfile`, `frontend/Dockerfile`, `frontend/nginx.conf`, `.github/workflows/ci.yml`, `docs/DEPLOYMENT.md` | Files exist; Docker command unavailable | Compose, images, CI and deployment have not been executed in this audit; Docker installation is explicitly out of scope. Resolve defaults and test on an approved Docker host |
+| Local/deployment/CI | Local Java/MySQL and npm startup, CI, deployment configuration and test evidence | Partial / Unverified | `.github/workflows/ci.yml`, `docs/DEPLOYMENT.md`, `README.md` | Local run instructions and CI configuration are present; deployment is unverified | Run local workflows and CI; resolve and verify settings on the selected deployment host |
 | Definition of done / final acceptance | Every requirement accepted only after relevant build, test, integration and docs evidence | Partial | This report and `docs/IMPLEMENTATION_STATUS.md` | Prior build/test/API/browser/database evidence listed below | Many requested acceptance tests are missing; use backlog and acceptance criteria in section G before calling the project complete |
 
 ## C. Feature inventory and actual behavior
@@ -85,8 +85,8 @@ All routes use `/api/v1`. Auth: registration/login and public job/fictional-port
 | Backend libraries | Web, Data JPA, Security, Validation, Actuator, Flyway core/PostgreSQL, PostgreSQL JDBC, Springdoc `2.8.6`, PDFBox `3.0.4`, POI OOXML `5.4.1`, Spring Boot test/Security test | Exact versions are fixed directly or inherited from the Spring Boot parent in `backend/pom.xml`. JWT is custom HS256 built with Java crypto, not a JWT library. HTTP uses Spring `RestClient`; Spring AI SDK is not included. |
 | Frontend | React `18.3.1`, React DOM `18.3.1`, TypeScript `5.7.3`, Vite `6.4.3`, Tailwind `4.3.3`, React Router `7.18.4`, Axios `1.20.0`, RHF `7.55.0`, Zod `3.24.2`, Recharts `3.0.0`, Lucide `0.468.0` | `npm ls --depth=0` from `frontend/` reported these installed versions. npm `10.8.1`, Node `20.16.0`. Lockfile is `frontend/package-lock.json`. |
 | Frontend tests | Vitest `4.1.11`, Testing Library DOM `10.4.1`, React `16.2.0`, jest-dom `6.6.3`, user-event `14.6.1`, jsdom `26.0.0`, Playwright Test `1.64.0` | Installed dependencies observed via npm. One unit-test file, multiple Playwright specs. |
-| Database | PostgreSQL in Compose configured as `postgres:16-alpine` | Local PostgreSQL binaries report `18.6`; data cluster `PG_VERSION` is 18. No server was running during audit. Prior live test used 18.6; project status notes Flyway warning because its tested support was through PG17. |
-| Build/deploy | Dockerfiles, Compose, nginx config, GitHub Actions workflow | Docker command is absent; no container command was executed. CI/Compose behavior is unverified. |
+| Database | Current application target is MySQL 8.4; historical PostgreSQL data and migrations are retained separately | Previous environment observations are historical; this cleanup does not touch databases. |
+| Build/deploy | GitHub Actions workflow and deployment notes | CI/deployment execution is unverified. |
 
 Node.js is needed to run Vite, npm scripts, frontend tests, and the Playwright worker; the application API/backend is Java/Spring Boot and does not use Node as its backend.
 
@@ -96,13 +96,13 @@ Flyway V1–V8 create `users`, `jobs`, `saved_jobs`, `applications`, `applicatio
 
 ## E. Environment variables and external credentials
 
-No real secrets are printed in this report. `.env` exists but is ignored by Git; `.env.example` contains placeholders. Spring Boot and Vite do **not** automatically load the repository-root `.env` file. Docker Compose reads that file automatically. For local non-Compose runs, set process environment variables in each terminal or use a deliberate safe loader.
+No real secrets are printed in this report. `.env` exists but is ignored by Git; `.env.example` contains placeholders. Spring Boot and Vite do **not** automatically load the repository-root `.env` file. Set process environment variables in each terminal for local runs; Spring Boot and Vite do not load it automatically.
 
 | Variable | Component / status | Controls and example placeholder | Where/how to obtain; works without it? |
 |---|---|---|---|
 | `DATABASE_URL` | Backend; required for DB-backed operation | `jdbc:postgresql://127.0.0.1:5433/careerpilot` | Local PostgreSQL connection URL. Backend cannot start DB modules without reachable database. |
-| `DATABASE_USERNAME`, `DATABASE_PASSWORD` | Backend; required; Compose maps `POSTGRES_USER/PASSWORD` into them | `<local-db-user>`, `<local-db-password>` | Set to the local DB role. Do not publish values. `.env` itself is ignored, but is not loaded by Maven automatically. |
-| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | Compose DB container; Compose-only | `careerpilot`, `careerpilot`, `<local-only-password>` | Initial cluster/database credentials. Compose unverified. |
+| `DATABASE_USERNAME`, `DATABASE_PASSWORD` | Backend; required | `<local-db-user>`, `<local-db-password>` | Set to the local MySQL role. Do not publish values. `.env` itself is ignored, but is not loaded by Maven automatically. |
+
 | `JWT_SECRET` | Backend; required; local fallback exists but unsafe for production | `<random-32-bytes-or-more>` | Generate a random secret locally. Source enforces at least 32 UTF-8 bytes. Production must not use `application.yml` fallback. |
 | `JWT_EXPIRATION_SECONDS` | Backend; optional, default 900 | `900` | Access-token lifetime; no refresh/revocation flow. |
 | `PORT` | Backend; optional, default 8080 | `8081` | Spring server port. |
@@ -144,11 +144,10 @@ git --version
 & (Join-Path $env:JAVA_HOME 'bin\java.exe') -version
 Set-Location (Join-Path $ProjectRoot 'backend')
 .\mvnw.cmd -v
-Get-Command docker -ErrorAction SilentlyContinue
 & (Join-Path $ProjectRoot '.tools\postgresql\pgsql\bin\psql.exe') --version
 ```
 
-Expected observations from this machine: Node `v20.16.0`, npm `10.8.1`, Git `2.46.0`, Java `21.0.12.1`, Wrapper Maven `3.9.9`, PostgreSQL client `18.6`; Docker command not found.
+Historical observations from this machine: Node `v20.16.0`, npm `10.8.1`, Git `2.46.0`, Java `21.0.12.1`, Wrapper Maven `3.9.9`, PostgreSQL client `18.6`.
 
 ### 2. Start the existing local PostgreSQL cluster — Terminal 1
 
@@ -168,7 +167,7 @@ Verify before proceeding:
 & (Join-Path $ProjectRoot '.tools\postgresql\pgsql\bin\pg_isready.exe') -h 127.0.0.1 -p 5433
 ```
 
-The configured cluster already has local test data/credentials; the audit did not print or verify credential values. If startup reports a stale PID or authentication/database error, inspect the named process and PostgreSQL log first. Do not delete data or kill an unidentified process. The project’s Compose path is an alternative only after Docker is installed and approved; it has not been tested here.
+The configured cluster already has local test data/credentials; the audit did not print or verify credential values. If startup reports a stale PID or authentication/database error, inspect the named process and PostgreSQL log first. Do not delete data or kill an unidentified process. Local backend and frontend processes should be run directly with Java 21/Maven Wrapper and npm.
 
 ### 3. Start backend — Terminal 2
 
@@ -267,7 +266,7 @@ To stop Vite and Spring Boot, press `Ctrl+C` in their own terminals. To stop Pos
 - **Automation `FAILED` or `UNVERIFIED`:** ensure frontend/API URLs and browser runner paths point to the running local services. `UNVERIFIED` intentionally means persistence could not be confirmed; do not assume submission succeeded.
 - **Port occupied:** inspect listener PID and command line first. Choose a new API `PORT`, Vite port, matching CORS origin, VITE API URL, and automation URLs together. Never kill an unidentified process.
 - **OpenAI mode returns 503:** set `AI_API_KEY` in the backend process, verify billing/model/base URL outside chat; or switch to labeled `AI_PROVIDER=local`.
-- **Docker command missing:** Docker/Compose was not available; this audit did not install it or test Compose.
+
 
 ## G. Test and verification evidence
 
@@ -284,7 +283,7 @@ No tests/builds/services were rerun during the audit. The following is prior evi
 | API persistence/auth | Prior log records signup/profile, unauthorized 401, seeded jobs, resume, saved job, application/status, match, cover-letter, interview, analytics persistence and owner-scope checks | Historical observed HTTP/API integration | No servers running in audit. Historical report describes portal-run cross-owner 404 and protected routes; not a comprehensive controller test suite. |
 | Portal automation | Prior API/browser/database runs report A/B/C `VERIFIED_SUCCESS`, same-key replay returned same run, modified body returned 409, foreign-owner lookup 404 | Historical end-to-end observation | Only fictional local portals; no external job site. |
 | AI integration | `OpenAiCompatibleAiProviderTest` (2 tests), local provider (1) | Passed in latest Maven XML | HTTP stub only; no paid/real provider request or real AI credential. |
-| Docker/Compose/CI | `docker compose config`, `docker compose up`, CI job | Not run; Docker command missing | Config files exist; images, health checks and full deployment remain unverified. |
+| CI | GitHub Actions job | Not run in this audit | Workflow configuration requires a CI run to verify. |
 
 Missing important test scenarios: MockMvc auth/validation/error contract; PostgreSQL repository and migration initialization in automated CI; IDOR matrix for every domain; resume replace/review/download/delete ownership and malformed/encrypted uploads; all job filters/pagination; application edit/status-history/duplicate/deadline workflows; cover-letter invalid AI output and owner boundaries; complete interview progression; analytics correctness across modules; portal cleanup/replay/failure/unknown outcome; automation worker timeout/restart and screenshot evidence; broader UI journeys from signup through saved job, match, letter, tracker and interview.
 
@@ -318,7 +317,7 @@ Missing important test scenarios: MockMvc auth/validation/error contract; Postgr
 
 - [ ] Add refresh/revocation strategy or documented short-token re-auth; production CSP/security headers, rate limiting and abuse controls; audit log that excludes secrets/PII.
 - [ ] Define retention/deletion, encryption-at-rest and backups for resumes, DB portal bytes, AI transfer disclosures and account deletion.
-- [ ] Test Docker Compose and CI on a Docker-capable runner; align container DB version with supported Flyway; verify health checks and frontend proxy/API path.
+- [ ] Run CI and verify the local MySQL 8.4 migration, health checks, API connection, and frontend API path.
 - [ ] Execute deployment preparation only with chosen host, secrets, database, TLS, backups and verification permissions; no deployment currently exists.
 - [ ] Fix README/environment path consistency and use a clean setup guide; replace the stale root `.env` URL values only when the operator chooses to edit their local ignored configuration.
 
@@ -335,7 +334,7 @@ Missing important test scenarios: MockMvc auth/validation/error contract; Postgr
 | Medium | Security is stateless bearer and CSRF is disabled; CORS is one configured origin with credentials disabled. That is coherent for bearer-only APIs, but deployment must not switch to cookie auth without revisiting CSRF. | Keep strict origin allowlist; add HTTPS/CSP/security headers, TLS, secure deployment config and tests; revisit CSRF if cookie auth is introduced. |
 | Medium | No complete systematic IDOR, validation, unexpected-error, controller, and data-retention tests. | Add MockMvc/database tests for all owner IDs, malformed values, database errors and safe error bodies. |
 | Low | No secrets found in tracked `.env` (it is untracked/ignored); `.env.example` contains placeholders. Targeted key/private-key scan did not identify obvious credential literals. | Continue secret scanning in CI; rotate credentials if a real secret was ever committed in Git history. Do not treat a clean working-tree scan as a history audit. |
-| Operational | PostgreSQL 18.6 is installed locally; prior run logs Flyway warned support tested through PG17. Docker/Compose/deployment are unverified. | Prefer the specified PostgreSQL 16 path or validate PG18 compatibility; test clean migrations, health checks and backup/restore in a controlled environment. |
+| Operational | PostgreSQL 18.6 is installed locally; prior run logs Flyway warned support tested through PG17. Deployment is unverified. | Prefer the specified PostgreSQL 16 path or validate PG18 compatibility; test clean migrations, health checks and backup/restore in a controlled environment. |
 
 No evidence indicates SQL string concatenation from user input in the inspected domain paths; repositories use JPA. This is a source review, not a formal penetration test or full Git-history secret scan.
 
@@ -365,7 +364,7 @@ No network/install attempts were made. `git diff --check` reported no whitespace
 4. Fill job-search filters and cross-module matching/analytics workflows.
 5. Add AI resume improvement and interview generation through the provider boundary, then richer mock feedback; maintain transparent local fallbacks.
 6. Extend deterministic E2E coverage through real local API/DB; add portal failure/restart/retry checks.
-7. Verify Docker/Compose/CI on an approved Docker host, resolve PostgreSQL compatibility, then conduct deployment and privacy/retention review.
+7. Verify CI and the selected local database setup, then conduct deployment and privacy/retention review.
 
 ## Audit file edits
 

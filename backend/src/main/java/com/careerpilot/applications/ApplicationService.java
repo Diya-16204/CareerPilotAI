@@ -24,7 +24,7 @@ public class ApplicationService {
     @Transactional
     public Response create(CreateRequest request,UUID userId){
         if(request.jobId()!=null&&applications.existsByUser_IdAndJob_Id(userId,request.jobId()))throw new ResponseStatusException(HttpStatus.CONFLICT,"This job is already in your application tracker.");
-        Job job=request.jobId()==null?null:jobs.findById(request.jobId()).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Job not found."));
+        Job job=request.jobId()==null?null:jobs.findVisibleById(request.jobId(),userId).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Job not found."));
         String title=request.title().trim(),company=request.company().trim();
         ApplicationStatus status=request.status()==null?ApplicationStatus.APPLIED:request.status();
         Application saved=applications.saveAndFlush(new Application(users.getReferenceById(userId),job,title,company,status));

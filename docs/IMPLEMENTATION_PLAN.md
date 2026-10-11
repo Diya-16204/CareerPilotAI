@@ -10,7 +10,7 @@ Implement a modular monolith (Java 21 Spring Boot + MySQL/Flyway) with a Vite Re
 |---|---|---|---|
 | 0 Inspect | Inspect files, Git, and toolchain; record baseline | None | `IMPLEMENTATION_STATUS.md` contains observed state |
 | 1 Plan | Architecture, relational model, API/error contract, gates | Phase 0 | Architecture/API/schema docs agree |
-| 2 Setup | React/Vite/JavaScript/Tailwind, Spring Boot/Maven, env, Compose | Phase 1 | Frontend build and backend package succeed |
+| 2 Setup | React/Vite/JavaScript/Tailwind, Spring Boot/Maven, local MySQL, environment | Phase 1 | Frontend build and backend package succeed |
 | 3 Common/data | DTOs, validation, error handling, Flyway, entities/repositories | Phase 2 | Migration initializes; persistence tests pass |
 | 4 Auth | Registration/login/current-user, JWT, ownership | Phase 3 | Auth and cross-user isolation tests pass |
 | 5 Frontend | Design system, navigation, auth, dashboard, typed API | Phases 2–4 | Type check/build; API-backed empty states |
@@ -22,7 +22,7 @@ Implement a modular monolith (Java 21 Spring Boot + MySQL/Flyway) with a Vite Re
 | 11 Playwright | Consent-aware browser adapter and E2E flows | Phase 10 | Browser workflows and database records verified |
 | 12 Integration | Real dashboard analytics and cross-module workflows | Phases 6–11 | UI values reconcile with persisted API data |
 | 13 QA/security | Unit, MVC, integration, frontend, E2E and ownership checks | All feature phases | Actual command outputs recorded |
-| 14 Deployment | Docker, health checks, CI, local and deployment docs | Phases 2–13 | Config checks/build evidence where tools allow |
+| 14 Deployment | Health checks, CI, local and deployment docs | Phases 2–13 | Config checks/build evidence where tools allow |
 | 15 Audit | Requirement-by-requirement evidence and remaining defects | All | Status checklist distinguishes implemented/tested/blocked |
 
 ## Initial vertical-slice API contract
@@ -31,7 +31,7 @@ Prefix: `/api/v1`. JSON requests/responses; ISO-8601 UTC timestamps. Protected r
 
 ## Verification commands
 
-Commands depend on installed tools. Expected frontend commands: `npm ci`, `npm test`, `npm run build`, and mocked `npm run test:e2e`; backend commands: `mvnw test`, `mvnw verify`; runtime acceptance additionally requires MySQL 8.4 and Docker Compose config/runtime validation. Record only commands actually run and their observed results in the status file. Current machine has Node/npm and Java 21 through the ignored local JDK; Maven Wrapper is available, while MySQL and Docker are absent. See `docs/MIGRATION_PROGRESS.md` for test evidence and blockers.
+Commands depend on installed tools. Expected frontend commands: `npm ci`, `npm test`, `npm run build`, and mocked `npm run test:e2e`; backend commands: `mvnw test`, `mvnw verify`; runtime acceptance additionally requires a configured MySQL 8.4 service. Record only commands actually run and their observed results in the status file. See `docs/MIGRATION_PROGRESS.md` for test evidence and blockers.
 
 ## Data relationships
 

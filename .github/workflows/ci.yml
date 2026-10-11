@@ -23,18 +23,6 @@ jobs:
 
   backend:
     runs-on: ubuntu-latest
-    services:
-      mysql:
-        image: mysql:8.4
-        env:
-          MYSQL_DATABASE: careerpilot
-          MYSQL_USER: careerpilot
-          MYSQL_PASSWORD: careerpilot
-          MYSQL_ROOT_PASSWORD: root
-        ports: ["3306:3306"]
-        options: >-
-          --health-cmd "mysqladmin ping -h 127.0.0.1 -u root -proot --silent"
-          --health-interval 5s --health-timeout 3s --health-retries 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -42,9 +30,4 @@ jobs:
           distribution: temurin
           java-version: 21
           cache: maven
-      - run: mvn -B verify -f backend/pom.xml
-        env:
-          DATABASE_URL: jdbc:mysql://localhost:3306/careerpilot?useSSL=false&allowPublicKeyRetrieval=true&connectionTimeZone=UTC
-          DATABASE_USERNAME: careerpilot
-          DATABASE_PASSWORD: careerpilot
-          JWT_SECRET: ci-only-test-secret-value-not-for-real-users-123456
+      - run: bash ./backend/mvnw -B verify -f backend/pom.xml

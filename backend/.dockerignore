@@ -1,8 +1,0 @@
-.git
-.tools
-.env
-.env.*
-target
-data
-uploads
-*.log
