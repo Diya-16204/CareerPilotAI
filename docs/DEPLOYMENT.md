@@ -1,96 +1,85 @@
 # CareerPilot deployment guide
 
-Updated: 2026-10-11 (Asia/Calcutta)
+Updated: 2026-10-11
 
-## Environment recheck (2026-10-11)
+## Target architecture
 
-- The local Microsoft JDK 21.0.12.1 remains available at `.tools/microsoft-jdk-21/jdk-21.0.12.1+1`; the global `java` command resolves to Oracle Java 22.0.2, so select the local JDK explicitly for the Java 21 backend. Node.js 20.16.0 and npm 10.8.1 are available.
-- MySQL 8.4 was not available during the 2026-10-11 environment check. Port 5432 had a PostgreSQL listener; it was not stopped or modified.
-- `gh`, AWS/Azure/GCP CLIs, Wrangler, Vercel, Netlify, Railway, and Fly CLIs were not found. No related deployment credential environment-variable names were present, and the available Codex browser sessions had no tabs, so provider authentication could not be established. No deployment or provider changes were made.
-- At the start of the recheck Git was on `main` at `49cf9fc0ac61ca85ce6a842661babcccfcd76881`. A subsequent observation showed `main` and `origin/main` at `b95da60664122ffd616a56c59cfa98552513f0ef` (`Commiting`); this existing commit was not created by that continuation. Its work was preserved. No commit or push was made by that continuation.
-- The MySQL Flyway migration was inspected but not applied; no MySQL schema or Hibernate validation result is claimed.
+- Backend: Spring Boot 3.5.16 / Java 21 on a Render Docker web service. The Dockerfile is only for hosted deployment; local Windows development continues to use Java 21 and `backend\mvnw.cmd` without Docker.
+- Database: existing Aiven MySQL 8.4 service. Do not point deployment at the local database or change the root `.env`.
+- Frontend: Vite static site on Vercel, configured after the API is deployed.
 
-## Deployment state
+The user reports that Aiven connectivity and the Flyway migrations were verified. That is not independently rechecked by this deployment preparation. No hosted service was created or deployed in this task.
 
-CareerPilot is **not deployed**. This guide records a low-cost target architecture and the configuration needed to prepare a deployment. No provider account was connected to this task, no hosting service was created, and no charge was incurred. No public URL exists.
+## Deploy the backend on Render
 
-The recommended architecture is Cloudflare Pages for the Vite frontend and Railway for the Spring Boot API, MySQL 8.4, and a persistent upload volume. This is a cost-oriented recommendation based on the current app, not a claim that the application is deployment-ready. Railway Hobby currently starts at $5/month and includes $5 of usage; usage beyond the included amount and storage/egress can add charges. Cloudflare Pages has a Free plan suitable for static frontend hosting at this project's current scale. Recheck provider pricing before creating services. Sources: [Railway pricing](https://docs.railway.com/pricing/plans), [Cloudflare Pages limits](https://developers.cloudflare.com/pages/platform/limits/).
+1. Push the repository and connect it in Render. Create a **Web Service**, select the repository and branch, and choose the **Free** instance type.
+2. Select the **Docker** runtime. Set **Root Directory** to `backend` and Dockerfile path to `Dockerfile`. Leave Docker command overrides empty; the image entrypoint starts Spring Boot.
+3. Set the health check path to `/actuator/health/readiness`.
+4. Add the environment variables below in the Render service dashboard. Put credentials only in Render's secret-value fields; do not add them to Git, Docker build arguments, frontend variables, or chat.
 
-## Verified prerequisites and blockers
+| Variable | Value |
+| --- | --- |
+| `DATABASE_URL` | `jdbc:mysql://<AIVEN_HOST>:<AIVEN_PORT>/careerpilot?sslMode=REQUIRED&connectionTimeZone=UTC` (use the host, port, and database shown in Aiven; keep TLS enabled) |
+| `DATABASE_USERNAME` | Aiven database username |
+| `DATABASE_PASSWORD` | Aiven database password (secret) |
+| `JWT_SECRET` | A newly generated random value with at least 32 bytes of entropy (secret; keep stable across redeploys) |
+| `JWT_EXPIRATION_SECONDS` | `900` |
+| `FRONTEND_ORIGIN` | The exact Vercel site origin after the frontend is deployed, e.g. `https://your-site.vercel.app`; initially it may remain unset/default until Vercel exists, then update it and redeploy |
+| `UPLOAD_DIR` | `/tmp/careerpilot/uploads` |
+| `AI_PROVIDER` | `local` unless an AI provider has been deliberately configured |
 
-- Java 21, Node.js/npm, Git, the Maven Wrapper, and local Maven are available in the development environment. MySQL server/client and deployment CLIs for the examined providers were not found in that check.
-- No hosting credential environment variables were found; provider authentication could not be established through the available CLIs or open browser sessions. The repository's public GitHub remote does not grant deployment access.
-- The existing root `.env` is user-owned and contains PostgreSQL configuration. Do not replace or edit it for this deployment. MySQL is the active configured backend target, but no MySQL runtime is available to verify migrations, schema validation, data import, or API integration.
-- Existing PostgreSQL data and separately stored resume files have local backups documented in `IMPLEMENTATION_STATUS.md` and `MIGRATION_PROGRESS.md`. Those backups are not encrypted and are not a migration. Do not point a new service at the PostgreSQL source or treat an empty MySQL database as a completed migration.
-- The Automation Center launches a Node/Playwright worker and currently defaults to local Edge/browser and loopback URLs. Hosted automation must be redesigned and verified before representing it as available.
-- An earlier Windows service enumeration was denied by the OS. The 2026-10-11 service query and command/path and port checks found no MySQL installation or listener. This does not prove that a database service cannot exist under another name or on another host.
+The application binds to Render's injected `PORT` (defaulting to 8080 locally), runs Flyway and Hibernate validation on startup, and uses the configured MySQL URL. Check the deploy logs for successful startup and database validation; readiness alone does not prove every application workflow works. If the migrations already ran on this Aiven database, Flyway should validate the recorded history and apply only any pending version; do not reset or drop the database.
 
-## Provider setup (manual dashboard steps)
+The Docker image runs as a non-root user. Its upload directory is writable, but Render Free has an ephemeral filesystem: resume uploads disappear when the service restarts, redeploys, or spins down. Do not treat this setup as durable storage for real resumes. Render Free web services spin down after 15 minutes without traffic and can take about a minute to wake. Render's free-tier documentation says Free instances are intended for testing/hobby use, not production. Review current [Render Free limitations](https://render.com/docs/free) before use.
 
-These steps require the owner to authorize the repository with Cloudflare and Railway and accept provider billing. No deployment or spending is authorized by this document. Enter secrets directly in provider dashboards; never paste them into chat, commit them, or place them in frontend build variables.
+### Render backend smoke checks
 
-### 1. Create MySQL and backend services in Railway
-
-Create a private MySQL service using the official MySQL 8.4 image (or another explicitly verified MySQL 8.4 deployment), with a persistent volume mounted at `/var/lib/mysql`. Railway documents its MySQL variables and private service networking at [Railway MySQL](https://docs.railway.com/databases/mysql). Confirm the actual image version and persistent-volume mount before applying migrations.
-
-Create a backend service from the connected repository using a Java 21 build environment. Configure its build to run `bash ./mvnw -B package` from `backend/` and its start command to run `java -jar target/careerpilot-api-0.1.0-SNAPSHOT.jar`. Confirm the platform provides Java 21, supports the Maven Wrapper, injects its `PORT`, and provides persistent upload storage before deployment. Configure readiness path `/actuator/health/readiness` ([health checks](https://docs.railway.com/deployments/healthchecks)); set `UPLOAD_DIR` to the platform's persistent upload path only after verifying it. Review [Railway volume behavior and backups](https://docs.railway.com/volumes/reference) and [volume backups](https://docs.railway.com/volumes/backups). These platform settings have not been tested.
-
-Set backend variables in Railway (reference syntax should be confirmed in the dashboard):
-
-```text
-DATABASE_URL=jdbc:mysql://${{MySQL.MYSQLHOST}}:${{MySQL.MYSQLPORT}}/${{MySQL.MYSQLDATABASE}}?useSSL=false&allowPublicKeyRetrieval=true&connectionTimeZone=UTC
-DATABASE_USERNAME=${{MySQL.MYSQLUSER}}
-DATABASE_PASSWORD=${{MySQL.MYSQLPASSWORD}}
-JWT_SECRET=<random secret with at least 32 bytes of entropy>
-JWT_EXPIRATION_SECONDS=900
-FRONTEND_ORIGIN=https://<actual-pages-hostname>
-UPLOAD_DIR=/data/uploads/resumes
-AI_PROVIDER=local
-```
-
-The app runs Flyway migrations at startup and Hibernate schema validation; startup success must be checked in logs and through readiness. Use a secret manager-generated JWT value. Keep AI in local mode unless the owner separately configures a provider and accepts its data handling and cost terms. Do not define API keys as `VITE_*` variables.
-
-### 2. Create the Cloudflare Pages frontend
-
-Connect the repository in Cloudflare Pages. Set root directory `frontend`, build command `npm ci && npm run build`, output directory `dist`, and Node 20 or a compatible current runtime. Configure this build-time public variable:
-
-```text
-VITE_API_BASE_URL=https://<actual-railway-api-hostname>/api/v1
-```
-
-After the first deployment, update the Railway `FRONTEND_ORIGIN` to the exact Pages origin, redeploy the API, and verify browser CORS requests. The frontend calls the API directly using `VITE_API_BASE_URL`. See [Cloudflare Pages build configuration](https://developers.cloudflare.com/pages/configuration/build-configuration/).
-
-## Data migration gate
-
-Do not import the PostgreSQL dump directly into MySQL. PostgreSQL and MySQL schemas, migration histories, types, and SQL syntax differ. First provision an isolated MySQL 8.4 database, run the MySQL Flyway baseline, validate the Hibernate schema, and implement a reviewed, repeatable transformation that preserves IDs, ownership, constraints, timestamps, and related file references. Import a copy of the verified PostgreSQL backup and resume-file backup, then reconcile source and target row counts and resume checksums. Run the API and user-isolation smoke checks against that target before any cutover. Keep the original PostgreSQL source and backups intact until the owner verifies the migrated application.
-
-Current blocker at the 2026-10-11 check: no MySQL server was available, so the migration has not been run and no compatible importer has been validated.
-
-## Local verification and public smoke checks
-
-The existing root `.env` is PostgreSQL-oriented. Leave it intact. Run the services directly on Windows. Set backend environment variables in the process that launches Spring Boot, and set `VITE_API_BASE_URL` in the frontend process if it differs from the default. Never copy credentials into tracked files.
+After Render shows the deploy as live, replace the placeholder with the assigned host:
 
 ```powershell
-npm ci --prefix frontend
-npm test --prefix frontend
-npm run build --prefix frontend
-$env:JAVA_HOME = (Resolve-Path .tools\microsoft-jdk-21\jdk-21.0.12.1+1).Path
-Push-Location backend
-.\mvnw.cmd -B clean verify
-Pop-Location
+$api = 'https://<your-render-service>.onrender.com'
+Invoke-RestMethod "$api/actuator/health/readiness"
 ```
 
-These are local build/test commands only; they do not start the backend or run Flyway migrations. Configure and confirm the target MySQL database before starting Spring Boot, because application startup applies Flyway migrations.
+Then use the frontend to register/sign in and check authenticated profile, jobs, resume, and application flows. Inspect browser Network errors and Render logs if CORS or database access fails. Never paste tokens, passwords, or full secret-bearing connection strings into an issue or chat.
 
-For a deployed instance, verify `GET https://<api-host>/actuator/health/readiness` returns healthy, registration/login and authenticated API calls succeed from the exact Pages origin, resume upload survives an API restart, and unauthorized/cross-account access is rejected. Verify the deployed build hash and TLS behavior in both provider dashboards. Do not announce a public URL until those checks have actually passed.
+## Deploy the frontend on Vercel
 
-The current frontend unit test and backend Maven verification results are recorded in `IMPLEMENTATION_STATUS.md`; repeat backend verification outside a restrictive sandbox if local HTTP stub tests are blocked from opening loopback sockets.
+1. Import the same GitHub repository into Vercel.
+2. Set the project **Root Directory** to `frontend`, framework preset to **Vite**, build command to `npm run build`, and output directory to `dist`. Vercel should install from `frontend/package-lock.json`.
+3. Add this public API base URL in the Vercel project's environment variables for Production (and Preview only if previews should call the same API):
 
-## Known deployment limitations
+```text
+VITE_API_BASE_URL=https://<your-render-service>.onrender.com/api/v1
+```
 
-- Public hosting, TLS, database version, persistent volume, migration, and cross-origin API behavior have not been verified.
-- The resume storage volume needs an explicit backup and restore drill; a volume alone is not a backup.
-- The Playwright automation worker has no verified hosted runtime design. It is a Node subprocess using `frontend/scripts/portal-automation.mjs`, a Playwright browser, sibling frontend files, local Edge defaults, and loopback-only frontend/API URL checks. Resume files live on the API's configured upload storage and are not automatically available in a separate worker. Work runs on an in-process executor, so persisted statuses recover interrupted work as `UNVERIFIED` rather than queueing it for another worker.
-- Before hosted automation, design and verify a separately isolated worker/browser image with a durable queue and leases, bounded concurrency/timeouts, pinned Playwright/browser versions, non-root/read-only runtime, and strict outbound hostname allowlists. Replace loopback-only URL assumptions with explicit trusted service origins and narrowly scoped worker authentication; avoid sharing the user's bearer token with arbitrary page code, stdout, or diagnostics. Provide the selected resume to the worker through a controlled private file-transfer or object-storage mechanism, and protect/redact screenshots and job payloads with private storage, retention limits, and access logging. Keep the browser limited to CareerPilot's own simulation origins; no real employer submissions are implemented or authorized.
-- The app has no demonstrated production MySQL migration of existing user data, no real AI provider configured, and no verified hosted error monitoring or restore procedure.
-- The app has no demonstrated production MySQL migration of existing user data, no real AI provider configured, and no verified hosted error monitoring or restore procedure.
+4. Deploy the frontend. Copy its exact HTTPS origin (scheme + host, no path) into Render's `FRONTEND_ORIGIN`, then redeploy the backend. The backend CORS configuration accepts the single configured origin.
+5. Test registration/login and an authenticated API request from the deployed site. Do not put `DATABASE_PASSWORD`, `JWT_SECRET`, or any AI provider key in a `VITE_*` variable; frontend build variables are public to browser users.
+
+## Deployment boundaries
+
+- Docker is used only by Render for building/running the backend. Local development remains Docker-free: run MySQL 8.4 as a Windows service, the API using Java 21 and `backend\mvnw.cmd`, and the UI with `npm run dev` from `frontend`.
+- Docker context is the backend directory; `.dockerignore` excludes `.env`, target output, uploads, and data directories. No resume files or secrets should enter the image.
+- The Automation Center is not verified for hosted operation. It spawns Node/Playwright and expects a browser plus local sibling frontend files and loopback URLs; this Java-only image does not provide that worker runtime. Do not advertise hosted automation as working.
+- Render Free's ephemeral storage is unsuitable for durable resume uploads. A persistent storage design or private object storage is required before relying on hosted uploads.
+- No PostgreSQL data import is performed by deployment. Do not import a PostgreSQL dump directly into MySQL without a reviewed transformation and reconciliation.
+- Keep the existing root `.env` and local database settings unchanged. Do not run migrations manually as a deployment fix; startup Flyway is the mechanism, and a failed startup must first be diagnosed from logs.
+
+## Local Windows commands (unchanged)
+
+Start the installed MySQL service in an elevated PowerShell only if it is stopped, then in separate terminals:
+
+```powershell
+# Backend (from repository root; set DATABASE_URL, DATABASE_USERNAME,
+# DATABASE_PASSWORD, and a 32+ byte JWT_SECRET in this terminal first)
+Set-Location .\backend
+.\mvnw.cmd spring-boot:run
+```
+
+```powershell
+# Frontend
+Set-Location .\frontend
+npm run dev
+```
+
+The frontend defaults to `http://localhost:8080/api/v1` when `VITE_API_BASE_URL` is not set.

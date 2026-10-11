@@ -1,5 +1,15 @@
 # Implementation Status
 
+## Render + Aiven deployment preparation (2026-10-11)
+
+- Added `backend/Dockerfile`: multi-stage Java 21 build, Maven Wrapper `verify`, runtime JRE, non-root UID/GID, writable `/tmp/careerpilot/uploads`, and Spring Boot entrypoint. This is deployment-only; local Windows development remains Docker-free.
+- Added `backend/.dockerignore` to keep `.env`, build output, database data, and resume uploads outside the image build context.
+- Replaced the prior Railway/Cloudflare instructions in `docs/DEPLOYMENT.md` with Render + existing Aiven MySQL + Vercel steps, exact backend/frontend settings, smoke checks, and limitations.
+- Environment and repository evidence observed in this continuation: Git was clean at `main...origin/main`; backend config binds `${PORT:8080}`, uses `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`, `JWT_SECRET`, and `FRONTEND_ORIGIN`; JWT startup rejects values shorter than 32 UTF-8 bytes; Maven project targets Java 21; Docker CLI was not found, so a local container image build and container run were not possible.
+- The owner reports Aiven connectivity and Flyway migrations were already verified. That is recorded as owner-reported, not independently checked here; no database connection, migration, hosted resource, deployment, commit, or push was performed.
+- Render Free limitations documented from provider docs: services sleep after 15 minutes of inactivity and filesystem contents are ephemeral, so uploaded resumes are not durable. The Java Docker image does not include Node/Playwright, so hosted Automation Center is not supported by this deployment configuration.
+- Verification performed on 2026-10-11: `backend\\mvnw.cmd -B -ntp verify` passed under Temurin OpenJDK 21.0.12.1 (24 tests, 0 failures/errors/skips, executable JAR packaged); `npm run build` passed (Vite 6.4.3, 2,188 modules). `git diff --check` reported no whitespace errors. Docker image build, Render deploy, Aiven connectivity from Render, and browser-to-production API workflows remain unverified; Docker CLI is unavailable here.
+
 ## Resume ATS scoring and Auto Apply continuation (2026-10-11)
 
 - Added a deterministic, content-based ATS estimate for readable extracted resume versions. General mode scores extracted contact fields, recognizable section headings, year-like dates, text length, and extreme token repetition. Job-specific mode compares normalized resume text/skills to a selected visible job or pasted description, reports matched/missing/partial terms, skill gaps, score categories, formula, caveats, and suggestions. Weighted categories are configurable with `ATS_WEIGHT_*` environment variables and defaults total 1.0.
