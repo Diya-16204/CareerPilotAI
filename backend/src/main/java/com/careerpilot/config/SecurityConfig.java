@@ -55,6 +55,7 @@ public class SecurityConfig {
                 .exceptionHandling(exceptions -> exceptions.authenticationEntryPoint((request, response, authException) -> errorWriter.write(request,response,HttpServletResponse.SC_UNAUTHORIZED,"UNAUTHORIZED","Sign in to continue.")))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**", "/actuator/health/**", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/jobs/saved").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/jobs", "/api/v1/jobs/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/simulated-portals/*/jobs").permitAll()
                         .anyRequest().authenticated())

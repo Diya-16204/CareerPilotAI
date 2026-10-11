@@ -3,7 +3,8 @@ let accessToken = null;
 export const setAccessToken = (token) => { accessToken = token; };
 export const api = axios.create({
     baseURL: import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api/v1',
-    timeout: 12_000,
+    // Render Free can take close to a minute to wake after inactivity.
+    timeout: 70_000,
     headers: { Accept: 'application/json' },
 });
 api.interceptors.request.use((config) => {
@@ -33,6 +34,7 @@ export const careerApi = {
     automationRun: async (id) => (await api.get(`/automation-runs/${id}`)).data,
     analytics: async () => (await api.get('/analytics/summary')).data,
     jobs: async (params) => (await api.get('/jobs', { params })).data,
+    savedJobs: async (params) => (await api.get('/jobs/saved', { params })).data,
     job: async (id) => (await api.get(`/jobs/${id}`)).data,
     importJob: async (input) => (await api.post('/jobs/import', input)).data,
     applications: async () => (await api.get('/applications', { params: { page: 0, size: 6, sort: 'updatedAt,desc' } })).data,

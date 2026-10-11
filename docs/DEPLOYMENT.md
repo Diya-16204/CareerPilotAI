@@ -31,6 +31,8 @@ The owner reports that Aiven connectivity and Flyway migrations were verified. O
 
 The application binds to Render's injected `PORT` (defaulting to 8080 locally), runs Flyway and Hibernate validation on startup, and uses the configured MySQL URL. Check the deploy logs for successful startup and database validation; readiness alone does not prove every application workflow works. If the migrations already ran on this Aiven database, Flyway should validate the recorded history and apply only any pending version; do not reset or drop the database.
 
+The frontend API client allows up to 70 seconds for requests because a sleeping Render Free service can take close to a minute to wake. Referral jobs use the authenticated `GET /api/v1/jobs/saved` endpoint; deploy the latest backend commit for this route. A timeout or API error must be shown as a retryable load error, not as an empty saved-jobs list.
+
 The Docker image runs as a non-root user. Its upload directory is writable, but Render Free has an ephemeral filesystem: resume uploads disappear when the service restarts, redeploys, or spins down. Do not treat this setup as durable storage for real resumes. Render Free web services spin down after 15 minutes without traffic and can take about a minute to wake. Render's free-tier documentation says Free instances are intended for testing/hobby use, not production. Review current [Render Free limitations](https://render.com/docs/free) before use.
 
 ### Render backend smoke checks

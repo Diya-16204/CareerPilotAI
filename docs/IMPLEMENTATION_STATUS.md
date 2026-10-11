@@ -1,11 +1,21 @@
 # Implementation Status
 
+## Referral saved jobs and Render cold starts (2026-10-11)
+
+- Root cause in the previous referral UI: it fetched the general jobs list (`page=0,size=100`) then filtered `saved`, and after any fetch error still rendered the empty-state text “No saved jobs yet.” It could miss records beyond that page and misreport a timeout as no saved jobs.
+- Added authenticated `GET /api/v1/jobs/saved`, querying saved-job rows directly for the current JWT owner; ordered by job creation date and paginated. The specific route is secured before the public jobs GET matcher.
+- Referral UI now uses that route, renders a retryable error instead of the no-saved-jobs message when loading fails, and shows a “free API may be waking” hint after four seconds. API request timeout was raised from 12 to 70 seconds to accommodate Render Free cold starts; this cannot make Render wake faster.
+- Added frontend tests for saved-job selection and failed-load/retry behavior, and a backend service test for returned/saved DTO mapping.
+- Verification on 2026-10-11: `backend\\mvnw.cmd -B -ntp verify` passed (25 tests, 0 failures/errors/skips); `npm test` passed (2 files, 3 tests); `npm run build` passed (Vite 6.4.3, 2,188 modules). No live user session or database data was changed. These changes are local and have not been deployed; the live website will continue using old behavior until the backend commit is deployed.
+
 ## Live Vercel/Render check (2026-10-11)
 
 - Opened `https://career-pilot-ai-blond-seven.vercel.app/`: homepage rendered with title `CareerPilot AI — Your career, in motion`; HTTP GET returned 200.
 - Confirmed the deployed JavaScript bundle contains the Render API base URL `https://careerpilotai-he15.onrender.com/api/v1`.
 - `GET https://careerpilotai-he15.onrender.com/actuator/health/readiness` returned HTTP 200 and `{"status":"UP"}`.
 - `GET https://careerpilotai-he15.onrender.com/api/v1/jobs` returned HTTP 200; response header `Access-Control-Allow-Origin` matched `https://career-pilot-ai-blond-seven.vercel.app`.
+- CORS preflight `OPTIONS /api/v1/auth/login` from the Vercel origin returned HTTP 200 and allowed POST with the requested `content-type` header.
+- Warm-request timing from this check: Vercel homepage 888 ms, Render readiness 2,311 ms, public jobs 2,449 ms. This does not measure a sleeping Render cold start; Free services can take around 50 seconds or more to wake.
 - Direct navigation to `https://career-pilot-ai-blond-seven.vercel.app/login` returned Vercel `404 NOT_FOUND`. Added `frontend/vercel.json` to rewrite SPA routes to `/index.html`. This correction has not been deployed or verified live yet.
 - Updated README and deployment guide with the supplied public site and observed backend/API results. No account was created, credentials entered, or user data written. Authenticated flows (registration/login, profile, saved jobs, resume, cover letter, referrals, application tracking, interview, analytics, automation) are not verified against the hosted database. The requested all-feature audit therefore remains incomplete until a test account/session is available and the rewrite is deployed.
 

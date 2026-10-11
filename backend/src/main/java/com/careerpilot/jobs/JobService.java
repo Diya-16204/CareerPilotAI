@@ -20,6 +20,10 @@ public class JobService {
         return jobs.search(userId,query,employment,pageable).map(job->dto(job,userId));
     }
     @Transactional(readOnly=true)
+    public Page<JobDtos.JobResponse> savedJobs(UUID userId,Pageable pageable){
+        return saved.findJobsSavedByUser(userId,pageable).map(job->dto(job,true));
+    }
+    @Transactional(readOnly=true)
     public JobDtos.JobResponse find(UUID id,UUID userId){return dto(jobs.findVisibleById(id,userId).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Job not found.")),userId);}
     @Transactional
     public void save(UUID jobId,UUID userId){
@@ -36,4 +40,5 @@ public class JobService {
         return dto(job,owner);
     }
     private JobDtos.JobResponse dto(Job job,UUID userId){return new JobDtos.JobResponse(job.getId(),job.getTitle(),job.getCompany(),job.getLocation(),job.getEmploymentType(),job.getDescription(),job.getSkills(),job.getSource(),job.isSample(),userId!=null&&saved.existsByUser_IdAndJob_Id(userId,job.getId()));}
+    private JobDtos.JobResponse dto(Job job,boolean isSaved){return new JobDtos.JobResponse(job.getId(),job.getTitle(),job.getCompany(),job.getLocation(),job.getEmploymentType(),job.getDescription(),job.getSkills(),job.getSource(),job.isSample(),isSaved);}
 }

@@ -44,6 +44,9 @@ export function ReferralPage() {
     const { user } = useAuth();
     const [savedJobs, setSavedJobs] = useState([]);
     const [jobsLoading, setJobsLoading] = useState(true);
+    const [jobsSlow, setJobsSlow] = useState(false);
+    const [jobsError, setJobsError] = useState('');
+    const [jobsReload, setJobsReload] = useState(0);
     const [resumes, setResumes] = useState([]);
     const [resumeDetail, setResumeDetail] = useState(null);
     const [resumeLoading, setResumeLoading] = useState(true);
@@ -57,18 +60,26 @@ export function ReferralPage() {
 
     useEffect(() => {
         let active = true;
-        careerApi.jobs({ page: 0, size: 100 }).then(page => {
+        setJobsLoading(true);
+        setJobsSlow(false);
+        setJobsError('');
+        const slowTimer = window.setTimeout(() => setJobsSlow(true), 4000);
+        careerApi.savedJobs({ page: 0, size: 100 }).then(page => {
             if (!active) return;
-            const saved = page.items.filter(job => job.saved);
+            const saved = page.items;
             setSavedJobs(saved);
             setForm(current => ({ ...current, jobId: saved[0]?.id ?? '' }));
         }).catch(reason => {
-            if (active) setError(apiMessage(reason));
+            if (active) setJobsError(apiMessage(reason));
         }).finally(() => {
-            if (active) setJobsLoading(false);
+            window.clearTimeout(slowTimer);
+            if (active) {
+                setJobsLoading(false);
+                setJobsSlow(false);
+            }
         });
-        return () => { active = false; };
-    }, []);
+        return () => { active = false; window.clearTimeout(slowTimer); };
+    }, [jobsReload]);
 
     useEffect(() => {
         let active = true;
@@ -181,7 +192,7 @@ export function ReferralPage() {
                 <div className="flex items-center gap-2"><span className="grid size-8 place-items-center rounded-lg bg-violet/10 text-violet"><MessageCircle size={15}/></span><h2 className="text-xs font-semibold">A little context</h2></div>
                 <div className="mt-5 space-y-4">
                     <div><label htmlFor="referral-recipient" className="mb-2 block text-[10px] font-semibold text-muted">Who are you messaging? *</label><input id="referral-recipient" className="field-input" maxLength={80} placeholder="Their name" value={form.recipient} onChange={event => update('recipient', event.target.value)}/></div>
-                    <div><label htmlFor="referral-job" className="mb-2 block text-[10px] font-semibold text-muted">Which saved job is this referral for? *</label><select id="referral-job" className="field-input" value={form.jobId} disabled={jobsLoading || savedJobs.length === 0} onChange={event => update('jobId', event.target.value)}><option value="">{jobsLoading ? 'Loading saved jobs…' : savedJobs.length ? 'Choose a saved job' : 'No saved jobs yet'}</option>{savedJobs.map(job => <option key={job.id} value={job.id}>{job.title} · {job.company}</option>)}</select>{!jobsLoading && savedJobs.length === 0 && <p className="mt-2 text-[10px] leading-5 text-muted">Save a role first from <Link className="font-semibold text-violet hover:text-white" to="/app/jobs">Explore jobs</Link>, then it will appear here.</p>}</div>
+                    <div><label htmlFor="referral-job" className="mb-2 block text-[10px] font-semibold text-muted">Which saved job is this referral for? *</label><select id="referral-job" className="field-input" value={form.jobId} disabled={jobsLoading || Boolean(jobsError) || savedJobs.length === 0} onChange={event => update('jobId', event.target.value)}><option value="">{jobsLoading ? 'Loading saved jobs…' : jobsError ? 'Could not load saved jobs' : savedJobs.length ? 'Choose a saved job' : 'No saved jobs yet'}</option>{savedJobs.map(job => <option key={job.id} value={job.id}>{job.title} · {job.company}</option>)}</select>{jobsSlow && jobsLoading && <p role="status" className="mt-2 text-[10px] leading-5 text-muted">The free API may be waking up. This can take about a minute.</p>}{jobsError && <div className="mt-2 flex flex-wrap items-center justify-between gap-2"><p role="alert" className="text-[10px] leading-5 text-rose-200">{jobsError}</p><button type="button" className="button-secondary !h-8 !px-3 !text-[10px]" onClick={() => setJobsReload(value => value + 1)}>Retry loading</button></div>}{!jobsLoading && !jobsError && savedJobs.length === 0 && <p className="mt-2 text-[10px] leading-5 text-muted">Save a role first from <Link className="font-semibold text-violet hover:text-white" to="/app/jobs">Explore jobs</Link>, then it will appear here.</p>}</div>
                     {savedJobs.find(job => job.id === form.jobId) && <div className="grid gap-3 rounded-xl border border-white/[.07] bg-white/[.025] p-3 sm:grid-cols-2">
                         <ReadOnlyField label="Job ID" value={savedJobs.find(job => job.id === form.jobId).id}/>
                         <ReadOnlyField label="Job role" value={savedJobs.find(job => job.id === form.jobId).title}/>

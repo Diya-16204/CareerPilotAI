@@ -22,6 +22,11 @@ public class JobController {
         Sort.Direction direction=sortParts.length>1&&sortParts[1].equalsIgnoreCase("asc")?Sort.Direction.ASC:Sort.Direction.DESC;
         return JobDtos.map(service.search(q,employmentType,PageRequest.of(page,size,Sort.by(direction,field)),userId),x->x);
     }
+    @GetMapping("/saved")
+    public JobDtos.PageResponse<JobDtos.JobResponse> saved(@RequestParam(defaultValue="0") @Min(0) int page,
+            @RequestParam(defaultValue="100") @Min(1) @Max(100) int size,@AuthenticationPrincipal UUID userId){
+        return JobDtos.map(service.savedJobs(userId,PageRequest.of(page,size,Sort.by(Sort.Direction.DESC,"createdAt"))),x->x);
+    }
     @GetMapping("/{id}") public JobDtos.JobResponse get(@PathVariable UUID id,@AuthenticationPrincipal UUID userId){return service.find(id,userId);}
     @PostMapping("/import") @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     public JobDtos.JobResponse importJob(@AuthenticationPrincipal UUID userId,@jakarta.validation.Valid @RequestBody JobDtos.ImportRequest request){return service.importJob(userId,request);}
