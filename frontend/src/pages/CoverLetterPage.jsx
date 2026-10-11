@@ -4,8 +4,9 @@ import { useSearchParams } from 'react-router-dom';
 import { apiMessage, careerApi } from '../api/client';
 export function CoverLetterPage() {
     const [params] = useSearchParams();
+    const requestedJobId = params.get('jobId');
     const [jobs, setJobs] = useState([]);
-    const [jobId, setJobId] = useState(params.get('jobId') ?? '');
+    const [jobId, setJobId] = useState(requestedJobId ?? '');
     const [resumes, setResumes] = useState([]);
     const [resumeId, setResumeId] = useState('');
     const [versions, setVersions] = useState([]);
@@ -19,7 +20,7 @@ export function CoverLetterPage() {
     const [error, setError] = useState('');
     const [notice, setNotice] = useState('');
     useEffect(() => { let active = true; Promise.all([careerApi.jobs({ page: 0, size: 100 }), careerApi.resumes(), careerApi.coverLetters()]).then(async ([jobPage, files, letterPage]) => { if (!active)
-        return; setJobs(jobPage.items); setResumes(files); setLetters(letterPage.items); const chosen = files[0]; if (chosen) {
+        return; setJobs(jobPage.items); setJobId(jobPage.items.some((job) => job.id === requestedJobId) ? requestedJobId : jobPage.items[0]?.id ?? ''); setResumes(files); setLetters(letterPage.items); const chosen = files[0]; if (chosen) {
         setResumeId(chosen.id);
         const detail = await careerApi.resume(chosen.id);
         if (active) {
@@ -28,7 +29,7 @@ export function CoverLetterPage() {
         }
     } }).catch((reason) => { if (active)
         setError(apiMessage(reason)); }).finally(() => { if (active)
-        setLoading(false); }); return () => { active = false; }; }, []);
+        setLoading(false); }); return () => { active = false; }; }, [requestedJobId]);
     async function chooseResume(id) { setResumeId(id); setVersions([]); setVersionId(''); if (!id)
         return; try {
         const detail = await careerApi.resume(id);
