@@ -61,7 +61,7 @@ Open two PowerShell windows from the repository root.
 **Terminal 1 — backend** (replace the placeholders with your local MySQL credentials):
 
 ```powershell
-$env:DATABASE_URL = 'jdbc:mysql://localhost:3306/careerpilot?useSSL=false&allowPublicKeyRetrieval=true&connectionTimeZone=UTC'
+$env:DATABASE_URL =   'jdbc:mysql://localhost:3306/careerpilot?useSSL=false&allowPublicKeyRetrieval=true&connectionTimeZone=UTC'
 $env:DATABASE_USERNAME = '<your-local-mysql-user>'
 $env:DATABASE_PASSWORD = '<your-local-mysql-password>'
 $env:JWT_SECRET = '<private random value of at least 32 bytes>'
