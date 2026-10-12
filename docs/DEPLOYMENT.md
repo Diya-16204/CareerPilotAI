@@ -4,7 +4,7 @@ Updated: 2026-10-11
 
 ## Target architecture
 
-- Backend: Spring Boot 3.5.16 / Java 21 on a Render Docker web service. The Dockerfile is only for hosted deployment; local Windows development continues to use Java 21 and `backend\mvnw.cmd` without Docker.
+- Backend: Spring Boot 3.5.16 / Java 21 on the existing Render Docker web service, built from the tracked `backend/Dockerfile`. Local Windows development uses Java 21 and `backend\mvnw.cmd` without Docker Compose.
 - Database: existing Aiven MySQL 8.4 service. Do not point deployment at the local database or change the root `.env`.
 - Frontend: Vite static site on Vercel: https://career-pilot-ai-blond-seven.vercel.app/.
 - Backend: https://careerpilotai-he15.onrender.com.
@@ -13,10 +13,9 @@ The owner reports that Aiven connectivity and Flyway migrations were verified. O
 
 ## Deploy the backend on Render
 
-1. Push the repository and connect it in Render. Create a **Web Service**, select the repository and branch, and choose the **Free** instance type.
-2. Select the **Docker** runtime. Set **Root Directory** to `backend` and Dockerfile path to `Dockerfile`. Leave Docker command overrides empty; the image entrypoint starts Spring Boot.
-3. Set the health check path to `/actuator/health/readiness`.
-4. Add the environment variables below in the Render service dashboard. Put credentials only in Render's secret-value fields; do not add them to Git, Docker build arguments, frontend variables, or chat.
+1. Use the existing Render Web Service and repository branch. Select the Docker runtime, set **Root Directory** to `backend`, and use `Dockerfile`.
+2. Set `/actuator/health/readiness` for the health check.
+3. Configure the environment variables below in the Render dashboard. Put credentials only in secret-value fields; do not add them to Git, build arguments, frontend variables, or chat.
 
 | Variable | Value |
 | --- | --- |
@@ -33,7 +32,7 @@ The application binds to Render's injected `PORT` (defaulting to 8080 locally), 
 
 The frontend API client allows up to 70 seconds for requests because a sleeping Render Free service can take close to a minute to wake. Referral jobs use the authenticated `GET /api/v1/jobs/saved` endpoint; deploy the latest backend commit for this route. A timeout or API error must be shown as a retryable load error, not as an empty saved-jobs list.
 
-The Docker image runs as a non-root user. Its upload directory is writable, but Render Free has an ephemeral filesystem: resume uploads disappear when the service restarts, redeploys, or spins down. Do not treat this setup as durable storage for real resumes. Render Free web services spin down after 15 minutes without traffic and can take about a minute to wake. Render's free-tier documentation says Free instances are intended for testing/hobby use, not production. Review current [Render Free limitations](https://render.com/docs/free) before use.
+The configured upload path is local filesystem storage. Render Free's filesystem is ephemeral: resume uploads can disappear when the service restarts, redeploys, or spins down. Do not treat this setup as durable storage for real resumes. Render Free web services spin down after inactivity and can take around a minute to wake. Review current [Render Free limitations](https://render.com/docs/free) before use.
 
 ### Render backend smoke checks
 
@@ -61,9 +60,11 @@ VITE_API_BASE_URL=https://careerpilotai-he15.onrender.com/api/v1
 
 ## Deployment boundaries
 
-- Docker is used only by Render for building/running the backend. Local development remains Docker-free: run MySQL 8.4 as a Windows service, the API using Java 21 and `backend\mvnw.cmd`, and the UI with `npm run dev` from `frontend`.
-- Docker context is the backend directory; `.dockerignore` excludes `.env`, target output, uploads, and data directories. No resume files or secrets should enter the image.
-- The Automation Center is not verified for hosted operation. It spawns Node/Playwright and expects a browser plus local sibling frontend files and loopback URLs; this Java-only image does not provide that worker runtime. Do not advertise hosted automation as working.
+- Docker is used for the existing Render backend image only; local development runs MySQL 8.4 as a Windows service, the API using Java 21 and `backend\mvnw.cmd`, and the UI with `npm run dev` from `frontend`. No Docker Compose is needed locally.
+- **Hosted Automation Center is currently blocked.** A user-provided screenshot shows `Resume file is unavailable.` while a resume record/version remains selectable. `ResumeStorage.resolve()` reads the stored bytes from `UPLOAD_DIR`; the resume name, version, and parsed fields are in MySQL. Render Free's filesystem is ephemeral, so a restart, spin-down, or redeploy can remove bytes without removing their MySQL metadata. Re-uploading to the deployed site can restore the file temporarily, but does not make storage durable.
+- **The hosted browser worker is absent from the image.** `backend/Dockerfile` includes only the Spring Boot JAR in its runtime stage. `ProcessPortalAutomationRunner` needs Node, `frontend/scripts/portal-automation.mjs`, Playwright, a browser, and a reachable fictional portal. The defaults also use loopback endpoints and `msedge`, which is not supplied by the Linux image. A production worker design and end-to-end deployment verification are still required.
+- Automation Center is simulation-only: its portals are fictional and no real employer-site adapters are implemented. Do not advertise it as applying to real jobs or as working on the hosted service.
+- The new per-job preparation workflow adds Flyway migration `V3__auto_apply_preparation_sessions.sql`. This task did not run it against the hosted Aiven database or deploy the new backend. The Auto Apply API is not ready on the live site until a reviewed deployment applies this additive migration and authenticated behavior is verified.
 - Render Free's ephemeral storage is unsuitable for durable resume uploads. A persistent storage design or private object storage is required before relying on hosted uploads.
 - No PostgreSQL data import is performed by deployment. Do not import a PostgreSQL dump directly into MySQL without a reviewed transformation and reconciliation.
 - Keep the existing root `.env` and local database settings unchanged. Do not run migrations manually as a deployment fix; startup Flyway is the mechanism, and a failed startup must first be diagnosed from logs.

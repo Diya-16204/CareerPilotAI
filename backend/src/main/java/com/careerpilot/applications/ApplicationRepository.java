@@ -7,6 +7,7 @@ import java.util.UUID;
 
 public interface ApplicationRepository extends JpaRepository<Application,UUID> {
     boolean existsByUser_IdAndJob_Id(UUID userId,UUID jobId);
+    java.util.Optional<Application> findByUser_IdAndJob_Id(UUID userId,UUID jobId);
     Page<Application> findAllByUser_IdOrderByUpdatedAtDesc(UUID userId,Pageable pageable);
     long countByUser_Id(UUID userId);
     long countByUser_IdAndStatus(UUID userId,ApplicationStatus status);

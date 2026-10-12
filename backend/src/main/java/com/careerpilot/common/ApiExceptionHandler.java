@@ -9,6 +9,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -16,6 +18,8 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+    private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ResponseEntity<ApiError> validation(MethodArgumentNotValidException exception, HttpServletRequest request) {
         Map<String, String> errors = new LinkedHashMap<>();
@@ -40,7 +44,8 @@ public class ApiExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    ResponseEntity<ApiError> unexpected(HttpServletRequest request) {
+    ResponseEntity<ApiError> unexpected(Exception exception, HttpServletRequest request) {
+        log.error("Unhandled API exception for {} {}", request.getMethod(), request.getRequestURI(), exception);
         return response(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "An unexpected error occurred.", request, Map.of());
     }
 

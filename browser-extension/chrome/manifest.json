@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "CareerPilot Autofill",
+  "version": "0.1.0",
+  "description": "Fill supported job application fields from a draft you explicitly approved in CareerPilot.",
+  "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": [
+    "http://localhost:5173/*",
+    "http://127.0.0.1:5173/*",
+    "https://career-pilot-ai-blond-seven.vercel.app/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "http://localhost:5173/*",
+        "http://127.0.0.1:5173/*",
+        "https://career-pilot-ai-blond-seven.vercel.app/*"
+      ],
+      "js": ["careerpilot-bridge.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "action": {
+    "default_title": "CareerPilot Autofill",
+    "default_popup": "popup.html"
+  }
+}

@@ -21,20 +21,17 @@ class CoverLetterServiceTest {
     private final ResumeRepository resumes=mock(ResumeRepository.class);
     private final UserAccountRepository users=mock(UserAccountRepository.class);
     private final AiProvider provider=mock(AiProvider.class);
-    private final CoverLetterService service=new CoverLetterService(letters,jobs,versions,resumes,users,provider);
+    private final CoverLetterGenerationTransactions generationTransactions=mock(CoverLetterGenerationTransactions.class);
+    private final CoverLetterService service=new CoverLetterService(letters,jobs,versions,resumes,users,provider,generationTransactions);
 
     @Test void cannotGenerateLetterForAnotherUsersPrivateJob(){
         UUID owner=UUID.randomUUID(),jobId=UUID.randomUUID(),resumeId=UUID.randomUUID(),versionId=UUID.randomUUID();
-        ResumeVersion version=mock(ResumeVersion.class);
-        when(version.getResumeId()).thenReturn(resumeId);
-        when(versions.findById(versionId)).thenReturn(Optional.of(version));
-        when(resumes.findByIdAndUser_Id(resumeId,owner)).thenReturn(Optional.of(mock(com.careerpilot.resume.Resume.class)));
-        when(jobs.findVisibleById(jobId,owner)).thenReturn(Optional.empty());
+        when(generationTransactions.load(owner,new CoverLetterDtos.GenerateRequest(jobId,versionId,"professional")))
+                .thenThrow(new ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND,"Job not found."));
 
         assertThatThrownBy(()->service.generate(owner,new CoverLetterDtos.GenerateRequest(jobId,versionId,"professional")))
                 .isInstanceOf(ResponseStatusException.class).hasMessageContaining("404 NOT_FOUND");
-        verify(jobs).findVisibleById(jobId,owner);
-        verify(jobs,never()).findById(jobId);
+        verify(generationTransactions).load(owner,new CoverLetterDtos.GenerateRequest(jobId,versionId,"professional"));
         verifyNoInteractions(provider);
         verify(letters,never()).saveAndFlush(any());
     }

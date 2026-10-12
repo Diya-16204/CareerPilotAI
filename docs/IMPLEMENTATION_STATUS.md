@@ -1,5 +1,13 @@
 # Implementation Status
 
+## Hosted Automation Center failure report (2026-10-11)
+
+- The user-provided deployed-site screenshot shows a selected resume/version and the backend error `Resume file is unavailable.` It also shows prior Northstar simulation runs as `FAILED` with `The browser workflow failed before submission.` This screenshot is evidence of the displayed failure; hosted logs and authenticated storage were not accessed in this investigation.
+- Source confirms resume metadata/version records are stored through JPA/MySQL, while `ResumeStorage` reads the actual PDF/DOCX from the local `UPLOAD_DIR`. The Render deployment guide sets this to `/tmp/careerpilot/uploads`; Render Free storage is ephemeral. Therefore an old resume record can remain selectable after its file bytes disappear. Re-uploading via the deployed site may restore the file temporarily; durable behavior requires private persistent/object storage.
+- Source also confirms the current backend Docker build context is `backend`, and the image only copies the Spring Boot JAR into a Java runtime. `ProcessPortalAutomationRunner` expects `node`, the sibling `frontend/scripts/portal-automation.mjs`, Playwright, a browser, and loopback simulation/API endpoints. The image does not provide that worker runtime; its default `msedge` browser channel also does not match the Linux image. Hosted Auto Apply remains blocked even if the resume is re-uploaded.
+- Automation Center remains a fictional-portal simulation. No real employer-site adapter or real job submission is implemented. No application was submitted as part of this investigation.
+- README and deployment documentation now describe these verified source-level blockers and the screenshot-reported resume error. No hosted settings, secrets, databases, uploaded files, or deployment state were changed. End-to-end hosted automation remains **NOT VERIFIED / BLOCKED** until durable storage and a browser-worker deployment are implemented and tested.
+
 ## Referral saved jobs and Render cold starts (2026-10-11)
 
 - Root cause in the previous referral UI: it fetched the general jobs list (`page=0,size=100`) then filtered `saved`, and after any fetch error still rendered the empty-state text “No saved jobs yet.” It could miss records beyond that page and misreport a timeout as no saved jobs.
@@ -142,3 +150,85 @@ Implement AI resume improvement and AI-generated interview questions, strengthen
 - No tests or builds were rerun for the audit. Existing Surefire XML artifacts dated 2026-10-10 total 16 tests, 0 failures, 0 errors, 0 skipped; executable JAR and frontend `dist/index.html` artifacts exist from today's earlier build. Saved Playwright last-run says passed; earlier status records 4 default E2E passes, 2 conditional skips, and a separate live Automation Center pass. See the audit for scope and limitations.
 - Key gaps confirmed from source: AI resume improvement and AI-generated interview questions are absent; interview feedback and matching are deterministic; application tracking omits requested edit/filter/deadline/follow-up/association flows; resume parsing extracts text/contact and a fixed skill list rather than structured experience/education; no real-site adapters are registered; local database-backed verification was outstanding; rate limiting, token revocation/refresh, production secret enforcement, and data retention/encryption controls remain.
 - Next action remains implementation backlog after this requested audit: first harden production secret defaults and add controller/database ownership tests, then complete resume/application workflows and broader E2E coverage. This audit did not start that backlog because the supplied audit prompt explicitly asked not to implement new features yet.
+
+## Agentic Auto Apply preparation workflow (2026-10-11)
+
+- Added authenticated, owner-scoped per-job preparation sessions and confirmed-answer storage through `application_prep_sessions` and `confirmed_application_answers`. Reuse is limited to the same job and exact normalized question, expires after 90 days, is disabled for sensitive/consequential questions, and remains a draft until the user confirms it. The new additive MySQL migration is `backend/src/main/resources/db/migration/mysql/V3__auto_apply_preparation_sessions.sql`; it was not applied to local or hosted MySQL in this task.
+- Refactored existing cover-letter generation to load immutable inputs and persist the generated draft in separate short transactions; the model request is made between those transactions rather than while holding the database transaction open.
+- Added a bounded preparation agent that checks visible job ownership, resume ownership/review status, and local resume-file availability; reuses existing cover-letter generation; drafts non-sensitive question answers through the configured AI provider; blocks AI inference for detected sensitive/consequential questions; and offers a previously confirmed answer only as a user-reviewed draft. Questions must be copied into the workflow by the user; no employer page parser or form adapter is currently registered.
+- Added `/app/auto-apply` and authenticated APIs at `/api/v1/auto-apply/sessions`. Users can edit drafts, confirm answers, optionally remember non-sensitive exact-question answers, retry failed preparation while retaining confirmed answers, review an exact content fingerprint, approve explicitly, and continue to a manual action. Approval does not itself submit an application.
+- The existing referral message generator is reused for separate editable LinkedIn and Instagram drafts. The separate Playwright Automation Center remains a fictional-portal workflow; the new per-job preparation session does not invoke that browser worker. No real-employer site submission is implemented or claimed. The tracked backend Docker image contains Java only, while that browser worker requires Node/Playwright/browser/frontend assets; hosted worker execution is blocked by the current image contents.
+- Verification on 2026-10-11: `backend\\mvnw.cmd -B verify` passed 28 tests (0 failures/errors/skips) and packaged the executable JAR, including new sensitive-question, normalized-key, and approval-invalidation checks. `npm test` passed 3 files / 4 tests. `npm run build` passed. Full `npm run test:e2e` passed 5 mocked Chromium tests and skipped 2 opt-in live API/database tests. The Auto Apply E2E mocks API responses; it is not a MySQL/backend integration test. `git diff --check` passed. No Spring Boot server, database, migration, hosted resource, or deployment was started/changed.
+- Remaining blockers: migration V3 has not been applied to the deployed Aiven schema; backend deployment and authenticated hosted verification remain pending; OpenAI-compatible AI answer generation needs a private `AI_API_KEY` and was not tested against a real provider; local mode is labeled and can require user-entered answers; question discovery is manual; only one job is prepared per session; real employer application form discovery/adapters/submission are absent. The new preparation page does not invoke the existing fictional-portal Playwright worker. Resume files on Render Free remain ephemeral, and hosted Playwright worker capability is absent from the current Java-only image. Existing `.env`, databases, backups, and prior work were preserved.
+
+## Startup error follow-up from user-provided PowerShell output (2026-10-12)
+
+- The supplied console transcript shows the first `JWT_SECRET` assignment failed because the attempted static `RandomNumberGenerator.GetBytes(32)` call is unavailable in that PowerShell/.NET environment. The later Spring Boot attempt consequently rejected the missing/short JWT secret (the application requires at least 32 UTF-8 bytes).
+- The same transcript then shows a later attempt successfully connected to local MySQL 8.4, validated three Flyway migrations, and applied V3 (`application_prep_sessions` and `confirmed_application_answers`; schema reached version 3). This migration was run by the user's Spring Boot process, not by this audit. The log then shows Hibernate schema validation failed because `approved_content_hash` was `CHAR(64)` in MySQL while the entity expected `VARCHAR(64)`.
+- Corrected `ApplicationPrepSession.approvedContentHash` to map to `char(64)` to match the existing V3 migration, and added a mapping test. `backend\\mvnw.cmd -B verify` passed afterward: 29 tests, 0 failures, 0 errors, 0 skipped; executable JAR packaged. This verifies compilation/unit tests only; Spring Boot was not restarted against MySQL after the correction, so runtime startup is not yet confirmed.
+- Security follow-up: the pasted transcript visibly echoed a database password. Its value is intentionally not recorded here. Rotate the `careerpilot` MySQL account password before reusing it; enter the replacement only in a secure local prompt and never in chat or committed files.
+- For Windows PowerShell, generate a fresh per-session JWT secret with the compatible instance method:
+  ```powershell
+  $bytes = New-Object byte[] 32
+  $rng = [Security.Cryptography.RandomNumberGenerator]::Create()
+  $rng.GetBytes($bytes)
+  $env:JWT_SECRET = [Convert]::ToBase64String($bytes)
+  $rng.Dispose()
+  Remove-Variable bytes
+  ```
+- Earlier statements that V3 had not been applied described the state before this user-provided run; the transcript now confirms it is applied to the user's local database. Hosted database migration state remains unverified.
+
+## Follow-up: MySQL startup schema mismatch (2026-10-12)
+
+- User-provided startup transcript confirms Java 21.0.12.1, MySQL 8.4.11 connectivity, Flyway validation of all three migrations, and schema version 3 already current. Spring Boot then failed Hibernate validation on `confirmed_application_answers.question_hash`: the V3 migration creates `CHAR(64)` but the entity mapping expected `VARCHAR(64)`.
+- Updated `ConfirmedApplicationAnswer.questionHash` to map explicitly as `char(64)` and added a mapping test. This complements the same correction for `application_prep_sessions.approved_content_hash`.
+- Verification: `backend\\mvnw.cmd -B -ntp verify` completed with BUILD SUCCESS (30 tests, 0 failures, 0 errors, 0 skipped; executable JAR packaged). No database migration was run by this verification.
+- The user must restart Spring Boot to confirm runtime schema validation now passes. No backend process was started in this continuation; `/actuator/health` remains unverified after the fix.
+
+## Auto Apply sessions endpoint HTTP 500 follow-up (2026-10-12)
+
+- User-provided DevTools Response confirms `GET /api/v1/auto-apply/sessions` returned HTTP 500 with the generic `INTERNAL_ERROR` payload. That response does not reveal the exception itself.
+- Source inspection found `spring.jpa.open-in-view: false`, while the session response accesses `job` and `resumeVersion` lazy relations. The repository's list/detail queries did not fetch those relations, creating a lazy-loading failure risk during DTO mapping.
+- Added JPA entity graphs for `job` and `resumeVersion` to both session list and detail repository queries, plus a repository metadata test. Verification: `backend\\mvnw.cmd -B -ntp verify` passed (31 tests, 0 failures/errors/skips; executable JAR packaged). `git diff --check` is still required after this edit; the 500 is not yet runtime-verified as fixed because the user's running backend has not been restarted with this build.
+
+## Auto Apply live recheck after fetch-graph fix (2026-10-12)
+
+- Local runtime check observed Java PID 12520 started at 10:16 and `/actuator/health` returned `UP`.
+- A no-token GET to `/api/v1/auto-apply/sessions` returned 401, confirming the protected route is reachable and rejects unauthenticated requests as expected; this does not exercise an authenticated session query.
+- The user-provided 500 response timestamp is 2026-10-12T04:42Z (10:12 Asia/Kolkata), earlier than the fetch-graph code/test change and backend restart observed at 10:16. Therefore that screenshot does not verify the latest fix. The authenticated Auto Apply UI request still needs a fresh post-restart check.
+
+## Auto Apply 500 diagnostic logging (2026-10-12)
+
+- A newer user screenshot at 10:17 shows the authenticated `GET /api/v1/auto-apply/sessions` still returns HTTP 500 after the repository fetch-graph change. Thus the earlier lazy-loading diagnosis was not confirmed as the sole root cause.
+- Added server-side logging of the exception and request method/path in the generic API exception handler; the API response remains generic and does not expose the stack trace to clients. This allows the next reproduction to identify the real backend exception in the local Spring console.
+- Verification: `backend\\mvnw.cmd -B -ntp verify` passed (31 tests, 0 failures/errors/skips). The running backend has not yet been restarted with this newest diagnostic build; authenticated endpoint is not currently verifiable from this session because the browser's bearer token is not accessible here.
+
+## Auto Apply create 500 root cause and correction (2026-10-12)
+
+- User-provided backend log identifies the actual failure: POST `/api/v1/auto-apply/sessions` throws `LazyInitializationException` while `AutoApplySessionService.response` reads `Job.getTitle()` after persistence context closure. This is the session creation response path, distinct from the earlier GET sessions screenshot.
+- The prior list/detail entity graph did not cover the detached object returned from `saveAndFlush` in the preparation flow. Updated preparation to flush the state and re-fetch the owned session via the repository entity graph before constructing the response DTO.
+- Verification after this correction: `backend\\mvnw.cmd -B -ntp verify` passed (31 tests; 0 failures/errors/skips; executable JAR packaged). No database migration was run. The corrected POST flow has not yet been runtime-tested against the user's authenticated local session; backend restart is required to load this build.
+
+## Auto Apply lazy-loading regression fix (2026-10-12)
+
+- Root cause confirmed from the supplied backend trace: the create/prepare flow flushed a session and then built its response after the persistence context had closed. `ApplicationPrepSession` response getters dereference lazy `Job` and `ResumeVersion` associations, so the response mapper raised `LazyInitializationException`.
+- Added `AutoApplySessionResponseReader`, which reloads one session or the session list through the existing repository queries (`job` + `resumeVersion` entity graphs) and maps the DTO inside a dedicated read-only transaction. Create/retry now use the reader after saving; list and detail use the same boundary. Open Session in View remains disabled and mappings remain LAZY.
+- Frontend `apiMessage` now displays short safe API business/validation messages, gives an actionable retry/log hint for generic `INTERNAL_ERROR`, and filters diagnostic-like content such as exception traces, SQL, tokens, and secrets.
+- Regression evidence: from `backend/`, focused command `./mvnw.cmd -B -ntp '-Dtest=AutoApplySessionServiceTest,AutoApplySessionResponseReaderTest,ApplicationPrepSessionRepositoryTest' test` passed (4 tests, 0 failures/errors/skips). Full `./mvnw.cmd test` passed (34 tests, 0 failures/errors/skips). Frontend `npm test -- --run` passed (4 test files, 6 tests). `npm run build` passed; Vite emitted its existing large-chunk advisory for the 500 kB main JS bundle.
+- No database, migration, hosted service, or backend process was started or modified during these checks. The user's local authenticated POST still needs a restart/retry to verify the runtime fix; unit tests do not exercise an actual MySQL/Hibernate session.
+
+## User-approved browser autofill helper (2026-10-12)
+
+- Added an optional Chrome Manifest V3 unpacked extension under `browser-extension/chrome`. Auto Apply can transfer a selected session only after its status is `APPROVED` and the user explicitly clicks the handoff button. The extension keeps the approved profile/draft in `chrome.storage.session` for at most 30 minutes and exposes a clear action.
+- The helper fills only supported, empty text/email/phone/textarea controls on the active tab after the user opens the extension and clicks fill. It uses explicit field labels/attributes and exact question labels, preserves non-empty fields, skips sensitive/eligibility questions, file uploads, checkboxes, radios, selects, passwords, and never clicks Submit. The user must attach the resume file and review/submit the employer form manually.
+- Added install/use/limitations instructions in `docs/AUTO_APPLY_BROWSER_AUTOFILL.md` and updated README. The extension bridge is allowlisted to local Vite origins and the known CareerPilot Vercel hostname; it requires reload/redeployment to use the app handoff after enabling the extension.
+- Verification on 2026-10-12: Node helper regression `node --test browser-extension/chrome/shared/form-filler.test.mjs` passed (1 test); `node --check` passed for popup, bridge, and service worker scripts; extension manifest parsed as valid JSON; frontend `npm test -- --run` passed (4 files / 6 tests); `npm run build` passed, with Vite's large-chunk advisory (main JS 502.52 kB). No Chrome extension runtime test or real employer form was performed; local Chrome installation and user workflow remain to verify.
+
+## Auto Apply application form and final review flow (2026-10-12)
+
+- Added an owner-scoped application-fields payload to each preparation session, with Flyway V4 adding `application_fields_json` and an `auto_apply_demo_submissions` record table. Existing session rows are initialized with an empty field list; no database migration was run in this work session.
+- The Auto Apply page now seeds applicant name/email from the authenticated profile, phone from a reviewed resume version, and blank optional location/cover-letter fields. The Chrome helper can capture visible field labels, input types, select/radio choices, and required flags; it sends the schema (not employer-entered values) to the currently selected session. Multi-step captures merge. Sensitive and eligibility answers are not auto-filled.
+- Field answers are editable and saved to the authenticated backend session. Required and basic format checks run in the UI and backend before approval/submission. Changing saved fields clears prior approval.
+- Added protected `/app/auto-apply/final/:sessionId`. It reloads the authoritative saved session, presents the information in a separate portal-style layout, and can record a fictional CareerPilot demo submission with an idempotent reference. The demo result can be fetched after refresh. Real employer navigation is explicitly manual and never reported as a verified submission.
+- Verification observed on 2026-10-12: `backend\\mvnw.cmd test` passed (39 tests, 0 failures/errors/skips); `frontend\\npm test -- --run` passed (6 files / 10 tests); `frontend\\npm run build` passed (Vite reported the >500 kB main chunk advisory); the Auto Apply Playwright E2E test passed (1 test); Node syntax checks and manifest parsing passed; `node --test` passed for form capture and fill (2 tests). No MySQL migration/startup, live Chrome extension test, or employer-site submission was performed.
+- Deployment still requires applying Flyway V4 through a backend startup/deploy. For actual employer forms, install/reload the unpacked Chrome extension, keep Auto Apply open, capture every visible form step, and verify field mappings manually. Resume file uploads and real employer submissions remain user actions.

@@ -32,6 +32,29 @@ public class ApplicationService {
         return dto(saved);
     }
 
+    /** Records a CareerPilot demo submission in the user's normal tracker and analytics. */
+    @Transactional
+    public Response recordAutoApplyDemo(UUID userId, UUID jobId, String title, String company) {
+        Application application = applications.findByUser_IdAndJob_Id(userId, jobId).orElse(null);
+        if (application == null) {
+            Job job = jobs.getReferenceById(jobId);
+            Application saved = applications.saveAndFlush(new Application(
+                    users.getReferenceById(userId), job, title, company, ApplicationStatus.APPLIED));
+            history.save(new ApplicationStatusHistory(saved, null, ApplicationStatus.APPLIED,
+                    "CareerPilot demo application completed; no real employer was contacted"));
+            return dto(saved);
+        }
+
+        ApplicationStatus previous = application.getStatus();
+        application.setStatus(ApplicationStatus.APPLIED);
+        Application saved = applications.saveAndFlush(application);
+        if (previous != ApplicationStatus.APPLIED) {
+            history.save(new ApplicationStatusHistory(saved, previous, ApplicationStatus.APPLIED,
+                    "CareerPilot demo application completed; no real employer was contacted"));
+        }
+        return dto(saved);
+    }
+
     @Transactional(readOnly=true)
     public Page<Response> list(UUID userId,Pageable pageable){return applications.findAllByUser_IdOrderByUpdatedAtDesc(userId,pageable).map(this::dto);}
 

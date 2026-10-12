@@ -3,42 +3,7 @@ import { Check, Copy, Download, Linkedin, MessageCircle, Send, Sparkles } from '
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { apiMessage, careerApi } from '../api/client';
-
-const relationshipOpeners = {
-    known: 'It was great connecting with you recently.',
-    mutual: 'I found your profile through our shared network.',
-    new: 'I came across your profile while learning about the team at {company}.',
-};
-
-function personalize(opener, company) {
-    return opener.replace('{company}', company);
-}
-
-function createMessages({ recipient, role, company, jobId, jobUrl, resumeUrl, relationship, fit, sender }) {
-    const opener = personalize(relationshipOpeners[relationship], company);
-    const fitSentence = fit.trim() ? `My experience with ${fit.trim()} seems relevant to the role.` : '';
-    const references = [
-        `Job ID: ${jobId}`,
-        jobUrl.trim() ? `Job posting: ${jobUrl.trim()}` : '',
-        resumeUrl.trim() ? `Resume: ${resumeUrl.trim()}` : '',
-    ].filter(Boolean).join('\n');
-    const linkedIn = [
-        `Hi ${recipient},`,
-        `${opener} I’m preparing to apply for the ${role} position at ${company}.`,
-        fitSentence,
-        references,
-        `If you feel my background could be a fit, would you be comfortable referring me? I’d be happy to share my resume and the job link. No pressure if you’re unable to.`,
-        `Thank you for considering it,\n${sender || 'Your name'}`,
-    ].filter(Boolean).join('\n\n');
-    const instagram = [
-        `Hi ${recipient}! ${opener}`,
-        `I’m interested in the ${role} role at ${company}.${fitSentence ? ` ${fitSentence}` : ''}`,
-        references,
-        `If you’re comfortable, could you refer me or point me to the right person? I can send my resume and the role link. No worries if not — thank you!`,
-        sender || 'Your name',
-    ].filter(Boolean).join('\n\n');
-    return { linkedIn, instagram };
-}
+import { createReferralMessages } from '../referrals/referralMessages';
 
 export function ReferralPage() {
     const { user } = useAuth();
@@ -167,7 +132,7 @@ export function ReferralPage() {
         }
         setError('');
         setCopied('');
-        setMessages(createMessages({ ...form, role: job.title, company: job.company, sender: user?.name?.trim() }));
+        setMessages(createReferralMessages({ ...form, role: job.title, company: job.company, sender: user?.name?.trim() }));
     }
 
     async function copy(platform) {

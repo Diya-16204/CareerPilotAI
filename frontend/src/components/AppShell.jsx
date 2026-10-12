@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Activity, BriefcaseBusiness, ChevronDown, CircleHelp, FileText, LayoutDashboard, LogOut, Menu, Settings2, UserRound, X, PenLine, UserCog, ChartNoAxesCombined, Workflow, Send } from 'lucide-react';
+import { Activity, BriefcaseBusiness, ChevronDown, CircleHelp, FileText, LayoutDashboard, LogOut, Menu, Settings2, UserRound, X, PenLine, UserCog, ChartNoAxesCombined, Workflow, Send, Sparkles } from 'lucide-react';
 import { Brand } from './Brand';
 import { useAuth } from '../auth/AuthContext';
 const links = [
@@ -10,6 +10,7 @@ const links = [
     { to: '/app/cover-letters', label: 'Cover letters', icon: PenLine },
     { to: '/app/referrals', label: 'Referral messages', icon: Send },
     { to: '/app/applications', label: 'Applications', icon: Activity },
+    { to: '/app/auto-apply', label: 'Auto Apply', icon: Sparkles },
     { to: '/app/automation', label: 'Automation center', icon: Workflow },
     { to: '/app/profile', label: 'Profile & settings', icon: UserCog },
 ];

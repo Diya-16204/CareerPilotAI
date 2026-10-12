@@ -13,4 +13,8 @@ public class UnconfiguredAiProvider implements AiProvider {
                                                String reviewedResumeText,List<String> skills,String tone){
         throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,"The requested AI provider is not configured in this build. Select AI_PROVIDER=local to use the clearly labeled local template.");
     }
+    @Override public ApplicationAnswerDraft draftApplicationAnswer(String candidateName,String jobTitle,String company,
+            String jobDescription,String profile,String resume,List<String> skills,String question){
+        throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,"The requested AI provider is not configured. Answer this application field yourself or choose a configured provider.");
+    }
 }

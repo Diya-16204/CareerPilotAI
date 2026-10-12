@@ -81,3 +81,9 @@ Status terms used: **Freshly verified**, **Implemented/unverified**, **Partial**
 - Global Java is 22.0.2, but the ignored local Microsoft JDK 21.0.12.1 remains available and should be explicitly selected. Node 20.16.0/npm 10.8.1 are available.
 - - No real MySQL database exists here. Flyway and Hibernate MySQL verification and essential API workflows remain blocked; no import from PostgreSQL was attempted. The deployment guide details the browser worker's network assumptions, resume-file sharing requirement, durable queue need, and production isolation/security design.
 - No frontend/backend application unit or integration tests were rerun because source behavior was unchanged. Prior frontend/Maven test evidence is separately dated and unchanged.
+
+## Auto Apply saved form fields and demo submission migration (2026-10-12)
+
+- Added `backend/src/main/resources/db/migration/mysql/V4__auto_apply_form_fields_and_demo_submissions.sql`.
+- V4 adds `application_fields_json` to `application_prep_sessions`, backfills existing sessions with `[]`, and creates the owner/session-scoped `auto_apply_demo_submissions` table with a unique session constraint for duplicate prevention.
+- Migration file and Hibernate mappings compile and the backend unit suite passes. This work did not connect to MySQL or execute V4. The user's local/cloud database remains at its previously verified schema state until the next controlled Spring Boot startup/deployment runs Flyway; confirm a backup and target URL before applying it.

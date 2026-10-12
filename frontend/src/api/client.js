@@ -16,7 +16,16 @@ export const apiMessage = (error) => {
     if (axios.isAxiosError(error)) {
         if (!error.response)
             return 'CareerPilot could not reach the service. Check that the API is running and try again.';
-        return error.response.data?.message ?? 'Something went wrong. Please try again.';
+        const payload = error.response.data;
+        if (payload?.errorCode === 'INTERNAL_ERROR')
+            return 'The service could not complete this request. Please retry; if it continues, check the backend log.';
+        const message = payload?.message;
+        // Only surface short, plain API guidance. Never render stack traces, SQL,
+        // credentials, tokens, or arbitrary server response data as UI copy.
+        if (typeof message === 'string' && message.length <= 240 &&
+            !/(?:\b(?:exception|stack trace|sqlstate|select\s+.+\s+from|insert\s+into|update\s+\w+\s+set|bearer\s+|password|secret|api[_ -]?key|access[_ -]?token)\b|\bat\s+[\w.$]+\s*\()/i.test(message))
+            return message;
+        return 'Something went wrong. Please try again.';
     }
     return 'Something went wrong. Please try again.';
 };
@@ -32,6 +41,17 @@ export const careerApi = {
     automationRuns: async () => (await api.get('/automation-runs', { params: { page: 0, size: 50 } })).data,
     startAutomationRun: async (input, idempotencyKey) => (await api.post('/automation-runs', input, { headers: { 'Idempotency-Key': idempotencyKey } })).data,
     automationRun: async (id) => (await api.get(`/automation-runs/${id}`)).data,
+    autoApplySessions: async () => (await api.get('/auto-apply/sessions')).data,
+    autoApplySession: async (id) => (await api.get(`/auto-apply/sessions/${id}`)).data,
+    saveAutoApplyFields: async (id, fields) => (await api.put(`/auto-apply/sessions/${id}/fields`, fields)).data,
+    submitAutoApplyDemo: async (id, fields, consent) => (await api.post(`/auto-apply/sessions/${id}/demo-submissions`, { fields, consent })).data,
+    autoApplyDemoSubmission: async id => (await api.get(`/auto-apply/sessions/${id}/demo-submissions`)).data,
+    createAutoApplySession: async (input) => (await api.post('/auto-apply/sessions', input)).data,
+    retryAutoApplyPreparation: async (id, tone, questions) => (await api.post(`/auto-apply/sessions/${id}/prepare`, questions, { params: { tone } })).data,
+    updateAutoApplyAnswer: async (id, key, input) => (await api.put(`/auto-apply/sessions/${id}/answers/${encodeURIComponent(key)}`, input)).data,
+    updateAutoApplyDraft: async (id, coverLetterDraft) => (await api.patch(`/auto-apply/sessions/${id}/draft`, { coverLetterDraft })).data,
+    approveAutoApplySession: async (id, consent) => (await api.post(`/auto-apply/sessions/${id}/approve`, { consent })).data,
+    continueAutoApplyManually: async (id) => (await api.post(`/auto-apply/sessions/${id}/continue-manually`)).data,
     analytics: async () => (await api.get('/analytics/summary')).data,
     jobs: async (params) => (await api.get('/jobs', { params })).data,
     savedJobs: async (params) => (await api.get('/jobs/saved', { params })).data,

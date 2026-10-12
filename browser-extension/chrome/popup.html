@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CareerPilot Autofill</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main>
+      <h1>CareerPilot Autofill</h1>
+      <p id="status" role="status">Checking for an approved draft…</p>
+      <section id="draft" hidden>
+        <strong id="job"></strong>
+        <small id="company"></small>
+        <p>Data is held in this browser session for up to 30 minutes.</p>
+        <button id="fill" type="button">Fill supported empty fields</button>
+        <button id="clear" class="secondary" type="button">Clear approved draft</button>
+      </section>
+      <button id="capture" type="button">Capture form fields to Auto Apply</button>
+      <p class="note">Fills supported empty text fields only. It skips sensitive questions, selects, checkboxes, and resume uploads. It never submits the form.</p>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

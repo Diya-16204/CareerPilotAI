@@ -1,0 +1,40 @@
+CREATE TABLE application_prep_sessions (
+  id BINARY(16) NOT NULL PRIMARY KEY,
+  owner_user_id BINARY(16) NOT NULL,
+  job_id BINARY(16) NOT NULL,
+  resume_version_id BINARY(16) NOT NULL,
+  cover_letter_id BINARY(16) NULL,
+  application_url VARCHAR(1000) NULL,
+  status VARCHAR(32) NOT NULL,
+  cover_letter_draft LONGTEXT NULL,
+  cover_letter_source VARCHAR(32) NULL,
+  answers_json LONGTEXT NOT NULL,
+  missing_information_json LONGTEXT NOT NULL,
+  approved_content_hash CHAR(64) NULL,
+  approved_at TIMESTAMP(6) NULL,
+  result_message VARCHAR(1000) NULL,
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  version INT NOT NULL DEFAULT 0,
+  CONSTRAINT chk_prep_status CHECK (status IN ('PREPARING','NEEDS_INFORMATION','READY_FOR_REVIEW','APPROVED','SUBMITTING','SUBMITTED','FAILED','BLOCKED','REQUIRES_MANUAL_ACTION')),
+  CONSTRAINT fk_prep_owner FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_prep_job FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE,
+  CONSTRAINT fk_prep_resume_version FOREIGN KEY (resume_version_id) REFERENCES resume_versions(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_prep_cover_letter FOREIGN KEY (cover_letter_id) REFERENCES cover_letters(id) ON DELETE SET NULL,
+  INDEX idx_prep_owner_created (owner_user_id, created_at),
+  INDEX idx_prep_status_updated (status, updated_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE confirmed_application_answers (
+  id BINARY(16) NOT NULL PRIMARY KEY,
+  owner_user_id BINARY(16) NOT NULL,
+  job_id BINARY(16) NOT NULL,
+  question_hash CHAR(64) NOT NULL,
+  question_text VARCHAR(300) NOT NULL,
+  answer_text VARCHAR(4000) NOT NULL,
+  updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  CONSTRAINT fk_confirmed_answer_owner FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_confirmed_answer_job FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE,
+  CONSTRAINT uq_confirmed_answer_owner_job_question UNIQUE (owner_user_id, job_id, question_hash),
+  INDEX idx_confirmed_answer_owner_updated (owner_user_id, updated_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
