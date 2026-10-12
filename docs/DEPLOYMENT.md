@@ -1,6 +1,6 @@
 # CareerPilot deployment guide
 
-Updated: 2026-10-11
+Updated: 2026-10-12
 
 ## Target architecture
 
@@ -9,7 +9,7 @@ Updated: 2026-10-11
 - Frontend: Vite static site on Vercel: https://career-pilot-ai-blond-seven.vercel.app/.
 - Backend: https://careerpilotai-he15.onrender.com.
 
-The owner reports that Aiven connectivity and Flyway migrations were verified. On 2026-10-11, the deployed frontend homepage returned HTTP 200, backend readiness returned `UP`, and `GET /api/v1/jobs` returned HTTP 200 with `Access-Control-Allow-Origin` set to the Vercel origin. Authenticated application flows have not been verified. Direct navigation to `/login` returned Vercel `404`; `frontend/vercel.json` now adds a SPA fallback, but that fix is not live until Vercel rebuilds the latest commit.
+The owner reports that Aiven connectivity and Flyway migrations were verified. On 2026-10-11, the deployed frontend homepage returned HTTP 200, backend readiness returned `UP`, and `GET /api/v1/jobs` returned HTTP 200 with `Access-Control-Allow-Origin` set to the Vercel origin. Authenticated application flows have not been verified by this deployment check. Direct navigation to `/login` returned Vercel `404`; `frontend/vercel.json` now adds a SPA fallback, but whether that fix is live has not been rechecked. The owner confirmed on 2026-10-12 that Chrome site access for the deployed Vercel origin was enabled for the unpacked Autofill extension; this confirms browser permission setup only, not a full live employer-form test.
 
 ## Deploy the backend on Render
 
@@ -64,7 +64,7 @@ VITE_API_BASE_URL=https://careerpilotai-he15.onrender.com/api/v1
 - **Hosted Automation Center is currently blocked.** A user-provided screenshot shows `Resume file is unavailable.` while a resume record/version remains selectable. `ResumeStorage.resolve()` reads the stored bytes from `UPLOAD_DIR`; the resume name, version, and parsed fields are in MySQL. Render Free's filesystem is ephemeral, so a restart, spin-down, or redeploy can remove bytes without removing their MySQL metadata. Re-uploading to the deployed site can restore the file temporarily, but does not make storage durable.
 - **The hosted browser worker is absent from the image.** `backend/Dockerfile` includes only the Spring Boot JAR in its runtime stage. `ProcessPortalAutomationRunner` needs Node, `frontend/scripts/portal-automation.mjs`, Playwright, a browser, and a reachable fictional portal. The defaults also use loopback endpoints and `msedge`, which is not supplied by the Linux image. A production worker design and end-to-end deployment verification are still required.
 - Automation Center is simulation-only: its portals are fictional and no real employer-site adapters are implemented. Do not advertise it as applying to real jobs or as working on the hosted service.
-- The new per-job preparation workflow adds Flyway migration `V3__auto_apply_preparation_sessions.sql`. This task did not run it against the hosted Aiven database or deploy the new backend. The Auto Apply API is not ready on the live site until a reviewed deployment applies this additive migration and authenticated behavior is verified.
+- Database migration state must be tracked per environment. A user-provided local startup transcript confirms Flyway V3 was applied to the local MySQL database and Hibernate validation then exposed schema mapping issues that were corrected in code. The repository also contains additive migration V4 (`V4__auto_apply_form_fields_and_demo_submissions.sql`) for saved form fields and fictional demo submissions. V4 was not run by the latest verification, and neither the V4 migration nor the current Auto Apply backend deployment has been verified on hosted Aiven/Render. Do not assume the deployed Auto Apply field/final-submission flow is ready until the Render logs show successful Flyway migration and the authenticated flow is exercised against the deployed services.
 - Render Free's ephemeral storage is unsuitable for durable resume uploads. A persistent storage design or private object storage is required before relying on hosted uploads.
 - No PostgreSQL data import is performed by deployment. Do not import a PostgreSQL dump directly into MySQL without a reviewed transformation and reconciliation.
 - Keep the existing root `.env` and local database settings unchanged. Do not run migrations manually as a deployment fix; startup Flyway is the mechanism, and a failed startup must first be diagnosed from logs.

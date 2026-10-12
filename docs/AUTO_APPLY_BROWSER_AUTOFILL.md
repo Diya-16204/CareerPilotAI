@@ -26,6 +26,10 @@ The helper is best-effort. Employer forms may use custom widgets, inaccessible l
 8. Open the employer application form and click **Fill supported empty fields**. Review every populated value, attach the resume manually, and answer skipped fields.
 9. Final Apply can record a submission only to CareerPilot's fictional demo portal. For a real employer, open its application page and click its submit control yourself; CareerPilot never claims that opening/filling a page submitted it.
 
+### Allow the deployed CareerPilot site
+
+Chrome may install the extension without granting it access to the hosted app. Open `chrome://extensions`, select **Details** for CareerPilot Autofill, open **Site access**, and enable `https://career-pilot-ai-blond-seven.vercel.app/*`. Then reload the CareerPilot tab and retry the handoff. The extension manifest allowlists this exact CareerPilot origin; it does not need broad access to all sites. Enabling the site permission lets the extension communicate with CareerPilot, while access to an employer tab is separately granted only when you open the extension popup and choose an action.
+
 The extension bridge is restricted to `localhost:5173`, `127.0.0.1:5173`, and the current CareerPilot Vercel hostname. For a different trusted CareerPilot hostname, add that exact origin in `manifest.json` and `careerpilot-bridge.js`, reload the unpacked extension, and reload the app. The extension does not need broad access to employer domains; `activeTab` grants access only after you open its popup and click the fill action.
 
 ## Limitations

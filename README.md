@@ -1,63 +1,92 @@
 # CareerPilot AI
 
-CareerPilot AI is a full-stack career management application built with React JavaScript, Spring Boot 3.5, Java 21, Maven, and MySQL 8.4. It includes resume parsing/versioning, job tracking and user-provided job imports, explainable skill matching, editable cover-letter drafts, interview practice, analytics, a user-approved automation center with persistent run history, and three fictional career-portal simulations.
+### Your career search, in one focused workspace.
 
-The protected **Auto Apply** workflow (`/app/auto-apply`) prepares one job at a time using a selected reviewed resume, existing cover-letter generation, optional LinkedIn/Instagram referral drafts, application questions, and persisted preparation history. The optional [Chrome helper](docs/AUTO_APPLY_BROWSER_AUTOFILL.md) captures visible employer-form labels/types/options/required flags into the saved session and can fill supported empty fields after approval. Users review and save answers on Auto Apply before a distinct Final Apply page. Its Apply Now action records only a fictional CareerPilot demo submission; real employer applications must be reviewed and submitted by the user. It never fills sensitive answers, attaches a file, or bypasses CAPTCHA/MFA. The separate Playwright Automation Center is limited to fictional test portals.
+CareerPilot AI is a full-stack career management app for organizing opportunities and preparing stronger applications. It brings job tracking, resume tools, interview practice, and carefully reviewed application drafts together in one place.
 
-This repository is an active, incomplete implementation. The requirement-by-requirement audit, environment inventory, historical test evidence, remaining work, and security findings are in [docs/PROJECT_AUDIT.md](docs/PROJECT_AUDIT.md). The PostgreSQL migration history and data are preserved; the application uses an independent MySQL Flyway baseline. Apply the MySQL migrations only after configuring and verifying the intended local MySQL database. See [docs/MIGRATION_PROGRESS.md](docs/MIGRATION_PROGRESS.md) for observed state and limitations. The protected Automation Center runs consented Playwright simulations against fictional portals; it does not apply to real employers.
+> **Project status:** active B.Tech capstone project. Core flows are implemented and tested locally; hosted authenticated workflows and durable resume storage still need verification. See [Implementation Status](docs/IMPLEMENTATION_STATUS.md) and the [Project Audit](docs/PROJECT_AUDIT.md) for evidence and open work.
 
-## Live deployment
+**Live links:** [Open CareerPilot](https://career-pilot-ai-blond-seven.vercel.app/) · [Backend readiness](https://careerpilotai-he15.onrender.com/actuator/health/readiness)
 
-- Frontend: [https://career-pilot-ai-blond-seven.vercel.app](https://career-pilot-ai-blond-seven.vercel.app/)
-- Backend readiness: [https://careerpilotai-he15.onrender.com/actuator/health/readiness](https://careerpilotai-he15.onrender.com/actuator/health/readiness)
-- Database: Aiven MySQL 8.4 (connection and migrations reported verified by the project owner).
+---
 
-The live frontend and backend were checked on 2026-10-11: the frontend homepage returned HTTP 200, backend readiness returned `UP`, and the public jobs API returned HTTP 200 with CORS allowing the Vercel origin. Warm request times in that check were 0.9 seconds for the homepage and about 2.3–2.4 seconds for the API; this does not measure Render's idle cold start. Client-side navigation to sign-in and registration rendered; direct URL refresh at `/login` returned Vercel 404. `frontend/vercel.json` configures the SPA fallback, but that fix is not live until Vercel deploys a commit containing it. The referral saved-jobs lookup and slow-start handling correction are present in this repository; whether they are live has not been rechecked, and the backend must deploy the matching route before the live UI can use it. Authenticated workflows have not been verified in the deployed environment. Render Free sleeps when idle and can take around 50 seconds or more to wake; its filesystem is ephemeral, so resume uploads are not durable. The hosted Automation Center lacks its Node/Playwright worker. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for setup and limitations.
+## What you can do
 
-### Known hosted problems
+| Workspace | What it helps with |
+| --- | --- |
+| **Explore jobs** | Save opportunities, import user-provided roles, and compare role requirements with resume skills. |
+| **Resume Studio** | Upload, parse, review, and version resumes; inspect ATS-oriented feedback. |
+| **Cover letters** | Create and edit role-specific drafts. Local mode uses a clearly labeled template; an optional AI provider can be configured. |
+| **Referral messages** | Prepare separate editable LinkedIn and Instagram referral drafts from a saved job. |
+| **Application tracker** | Keep job status and next steps organized. |
+| **Interview practice & analytics** | Practice interview questions and review career-search progress. |
+| **Auto Apply preparation** | Collect and save application answers, review a final draft, and use the optional Chrome helper for supported form fields. |
+| **Automation Center** | Run Playwright workflows against fictional CareerPilot portals and inspect persisted run history. |
 
-- **Resume file unavailable:** A user-provided Automation Center screenshot shows the resume name/version in the form but the backend returns `Resume file is unavailable.` Resume metadata is stored in MySQL, while the PDF/DOCX bytes are stored under `UPLOAD_DIR` on the backend filesystem. Render Free's filesystem is ephemeral; after a restart, spin-down, or redeploy, metadata can remain while the file is gone. Re-uploading the resume to the deployed site can restore it temporarily. Durable use requires private persistent/object storage; do not assume a displayed resume entry means its file is present.
-- **Hosted automation worker missing:** [`backend/Dockerfile`](backend/Dockerfile) builds and runs Spring Boot only. It does not package Node.js, Playwright, a browser, or the sibling frontend files expected by `ProcessPortalAutomationRunner`. The worker is configured for loopback URLs and a local fictional portal. Hosted browser automation is not operational just because the backend is running; resume bytes are also ephemeral on the current Render Free setup.
-- **Simulation only:** Automation Center's portals are fictional CareerPilot test portals. Real employer-site auto-application adapters are not implemented. No real employer receives an application from this feature.
-- **Auto Apply limits:** Employer-form discovery is an optional unpacked Chrome extension action: open each visible form step and capture it while the matching Auto Apply session remains open. Hidden/custom widgets and resume uploads may need manual handling. The feature does not submit to real employers. Local AI mode produces a labeled cover-letter template; AI answer drafting requires a configured private `AI_API_KEY`. V3 and V4 add the Auto Apply session/form persistence schema; V4 has been added but was not applied to any database during this implementation. Deploy and verify the backend migration before using this new flow online.
-- **Other deployment limits:** Render Free can sleep while idle. Authenticated end-to-end workflows have not been verified against the deployed account/database. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) and [docs/PROJECT_AUDIT.md](docs/PROJECT_AUDIT.md) for evidence and remaining work.
+### A careful “Auto Apply”
 
-## Requirements
+CareerPilot prepares and reviews application information; it does **not** silently submit applications to real employers. The optional Chrome extension can capture visible form structure and fill supported empty text fields after an explicit user action. You still review the employer form, attach the resume yourself, answer unsupported or sensitive questions, and submit it yourself. The Final Apply confirmation records a submission only in CareerPilot’s fictional demo portal.
 
-- Node.js 20+ and npm.
-- Java 21 and Maven 3.9+ for the backend.
-- MySQL 8.4 for local backend execution.
-- Microsoft Edge or Playwright Chromium for browser tests.
+See [Chrome helper setup and limitations](docs/AUTO_APPLY_BROWSER_AUTOFILL.md) and the [real-site automation boundary](docs/REAL_SITE_AUTOMATION.md).
 
-## Local development
+---
 
-Run the backend directly with Java 21 and the Maven Wrapper, and run the frontend with npm. Spring Boot and Vite do not automatically load the root `.env`; set required environment variables in each process. The PowerShell commands below use the configured local MySQL target. Backend default port is 8080; Vite development default is 5173. Keep `FRONTEND_ORIGIN`, `VITE_API_BASE_URL`, and automation URLs aligned if you change ports.
+## How it fits together
 
-Quick start in two PowerShell terminals (configure the MySQL database and supply real local credentials first; Spring Boot startup runs Flyway migrations):
+```mermaid
+flowchart LR
+  U[You] --> UI[React + Vite]
+  UI -->|REST + JWT| API[Spring Boot API]
+  API --> DB[(MySQL 8.4<br/>Flyway migrations)]
+  UI -. optional, explicit form helper .-> EXT[Chrome extension]
+  API -. fictional test workflows .-> PW[Playwright worker]
+```
+
+| Layer | Technology |
+| --- | --- |
+| Frontend | React, JavaScript, Vite |
+| Backend | Java 21, Spring Boot 3.5, Maven Wrapper, Spring Security/JWT, Spring Data JPA |
+| Database | MySQL 8.4, Flyway |
+| Browser workflows | Playwright; optional Chrome Manifest V3 helper |
+| Current hosting | Vercel frontend, Render backend, Aiven MySQL |
+
+---
+
+## Run locally on Windows
+
+Install/use Node.js and npm, Java 21, and MySQL 8.4. Docker is not required for local development. First create/configure the dedicated `careerpilot` MySQL database and credentials; backend startup applies pending Flyway migrations, so point it only at the intended database. The existing root `.env` is not loaded automatically and should remain untouched.
+
+Open two PowerShell windows from the repository root.
+
+**Terminal 1 — backend** (replace the placeholders with your local MySQL credentials):
 
 ```powershell
-# Terminal 1 — backend
 $env:DATABASE_URL = 'jdbc:mysql://localhost:3306/careerpilot?useSSL=false&allowPublicKeyRetrieval=true&connectionTimeZone=UTC'
 $env:DATABASE_USERNAME = '<your-local-mysql-user>'
 $env:DATABASE_PASSWORD = '<your-local-mysql-password>'
-$env:JWT_SECRET = '<a private random secret of at least 32 bytes>'
+$env:JWT_SECRET = '<private random value of at least 32 bytes>'
 $env:FRONTEND_ORIGIN = 'http://localhost:5173'
-Set-Location backend
+Set-Location .\backend
 .\mvnw.cmd spring-boot:run
+```
 
-# Terminal 2 — frontend (run from the repository root)
-Set-Location frontend
-npm ci
+**Terminal 2 — frontend:**
+
+```powershell
+Set-Location .\frontend
+npm ci       # first run, or after the lockfile changes
 npm run dev -- --host 127.0.0.1
 ```
 
-Use a Java 21 `JAVA_HOME` before starting the backend. Do not put credentials in tracked files or overwrite the existing root `.env`.
+Open [http://127.0.0.1:5173](http://127.0.0.1:5173). The API defaults to `http://localhost:8080/api/v1`. Keep both terminals open while using the app. For a repeat visit after dependencies are installed, you can omit `npm ci`.
 
-The application applies Flyway migrations at backend startup and validates the Hibernate model against the migrated schema. Local deterministic matching and interview evaluation work without an AI credential. Cover-letter drafts use an explicitly labeled local template by default. An optional OpenAI-compatible provider is available through `AI_PROVIDER=openai` and `AI_API_KEY`; see [docs/AI_PROVIDER.md](docs/AI_PROVIDER.md). No paid remote account was used for verification.
+For optional AI drafting, configure a private `AI_API_KEY` on the backend process and the provider setting described in [AI provider setup](docs/AI_PROVIDER.md). Never put private keys in `VITE_*` variables or commit them.
 
-## Verification
+---
 
-Run from `frontend/`:
+## Checks
+
+From `frontend/`:
 
 ```powershell
 npm test
@@ -65,258 +94,36 @@ npm run build
 npm run test:e2e
 ```
 
-Playwright's default suite tests the three simulation flows and the mocked Automation Center. Set `$env:PLAYWRIGHT_BROWSER = 'msedge'` when Microsoft Edge is installed. Live E2E requires a running MySQL database, API, and Vite; enable it only with `$env:CAREERPILOT_LIVE_E2E = '1'`. Backend tests run from `backend/` using `.\mvnw.cmd -B test` on Windows or `./mvnw -B test` on macOS/Linux.
+From `backend/`:
 
-See [docs/TESTING.md](docs/TESTING.md), [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md), [docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md), and [docs/REAL_SITE_AUTOMATION.md](docs/REAL_SITE_AUTOMATION.md) for details. Historical test results are not a claim that services are currently running. Simulated portal applications are test-only and never contact real employers.
+```powershell
+.\mvnw.cmd -B test
+```
 
+The Playwright suite includes fictional-portal simulations. Live E2E checks require the local database, backend, and frontend. Historical passes in the status document describe what was run then; they do not mean services are running now.
 
+---
 
+## Deployment & known limits
 
+The current hosting plan is Vercel (frontend), Render (Spring Boot backend), and Aiven (MySQL). The public links above were previously checked for basic availability, but authenticated workflows and the newest Auto Apply release have not been re-verified live. See [Deployment Guide](docs/DEPLOYMENT.md) before redeploying.
 
+- Render Free may sleep between requests, causing a slow first response.
+- Resume details live in MySQL, but uploaded file bytes currently use the backend filesystem. On the free Render filesystem those files may disappear after restart/redeploy; a resume entry can remain while its file is unavailable. Durable private object storage is still needed.
+- The Auto Apply application-fields and demo-submission schema includes Flyway V4. It is in the repository; hosted migration/deployment status is not verified. Do not assume the newest flow is live until the backend deploy succeeds and the migration is observed.
+- The hosted backend image does not currently provide the Node/Playwright browser worker expected by Automation Center. Local fictional simulations do not prove hosted automation works.
+- No real-employer submission integration is implemented. CAPTCHA/MFA and employer security controls are never bypassed.
 
+---
 
+## Project notes
 
+- [Implementation status and test evidence](docs/IMPLEMENTATION_STATUS.md)
+- [Full requirements audit](docs/PROJECT_AUDIT.md)
+- [Deployment instructions](docs/DEPLOYMENT.md)
+- [Database migration progress](docs/MIGRATION_PROGRESS.md)
+- [Testing guide](docs/TESTING.md)
+- [API documentation](docs/API_DOCUMENTATION.md)
+- [AI provider setup](docs/AI_PROVIDER.md)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+CareerPilot is a productivity and preparation tool, not an employment guarantee. Verify job postings and all application details before sharing them with an employer.
