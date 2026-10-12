@@ -127,3 +127,75 @@ The current hosting plan is Vercel (frontend), Render (Spring Boot backend), and
 - [AI provider setup](docs/AI_PROVIDER.md)
 
 CareerPilot is a productivity and preparation tool, not an employment guarantee. Verify job postings and all application details before sharing them with an employer.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Get-Service MYSQL84
+Test-NetConnection 127.0.0.1 -Port 3306
+
+
+
+
+Set-Location 'C:\Users\Sach\Downloads\SHAMBHU\Projects\CareerPilot\backend'
+
+$env:DATABASE_URL = 'jdbc:mysql://localhost:3306/careerpilot?useSSL=false&allowPublicKeyRetrieval=true&connectionTimeZone=UTC'
+$env:DATABASE_USERNAME = 'careerpilot'
+$secure = Read-Host 'MySQL password' -AsSecureString
+$ptr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
+try { $env:DATABASE_PASSWORD = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr) }
+finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr) }
+
+$bytes = New-Object byte[] 32
+$rng = [Security.Cryptography.RandomNumberGenerator]::Create()
+$rng.GetBytes($bytes)
+$env:JWT_SECRET = [Convert]::ToBase64String($bytes)
+$rng.Dispose()
+Remove-Variable bytes
+
+$env:FRONTEND_ORIGIN = 'http://localhost:5173'
+.\mvnw.cmd spring-boot:run
+
+
+
+
+
+Set-Location 'C:\Users\Sach\Downloads\SHAMBHU\Projects\CareerPilot\frontend'
+npm run dev -- --host 127.0.0.1
