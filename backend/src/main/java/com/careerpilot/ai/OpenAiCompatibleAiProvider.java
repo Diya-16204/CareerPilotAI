@@ -139,3 +139,11 @@ public class OpenAiCompatibleAiProvider implements AiProvider {
     private String truncate(String text,int limit){String value=text==null?"":text;return value.length()<=limit?value:value.substring(0,limit);}
     private String safe(String value,int limit){return truncate(value,limit);}
 }
+
+//Imports Jackson library classes used to build, serialize, and parse JSON structures.
+
+//Imports SLF4J logging framework components.
+
+//Imports Spring Framework annotations, HTTP client classes (RestClient), and HTTP error handling exceptions (ResponseStatusException).
+
+//Imports standard Java utilities for network timeouts (Duration), collections (List, Map), and low-level HTTP client configuration.

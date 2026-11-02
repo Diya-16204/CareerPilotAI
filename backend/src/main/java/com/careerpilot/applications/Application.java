@@ -27,3 +27,5 @@ public class Application {
     public UUID getId(){return id;} public UUID getUserId(){return user.getId();} public String getTitle(){return title;} public String getCompany(){return company;} public ApplicationStatus getStatus(){return status;} public Instant getAppliedAt(){return appliedAt;} public Instant getUpdatedAt(){return updatedAt;}
     public void setStatus(ApplicationStatus status){this.status=status;if(status==ApplicationStatus.APPLIED&&appliedAt==null)appliedAt=Instant.now();}
 }
+
+    //Instructs JPA to store enum constant name as raw string text in database (e.g., "APPLIED").

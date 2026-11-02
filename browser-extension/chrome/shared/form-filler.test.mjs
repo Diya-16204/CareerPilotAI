@@ -48,3 +48,23 @@ test('fills supported empty fields from an approved draft, preserving existing a
   assert.equal(password.value, '');
   assert.equal(result.count, 3);
 });
+
+//Imports (import ...): Loads the native Node.js test runner, strict assertion library, and the form-filler.js module under test.
+//
+// Mock DOM Control Class (class Control): Constructs simulated HTML input elements with labels, dataset properties, attribute getters, and event dispatch stubs.
+//
+// Test Suite Definition (test('fills supported ...', ...)): Registers a unit test verifying that form filling populates empty supported fields while leaving pre-filled text and sensitive questions untouched.
+//
+// Form Control Instantiation (const name = ...): Creates mock inputs for name, email, custom question, pre-filled phone, work authorization (sensitive), and password.
+//
+// Mock Root Container (const root = ...): Mocks a DOM root element whose querySelectorAll method returns the list of simulated form controls.
+//
+// Draft Data Fixture (const draft = ...): Defines applicant candidate profile values, job details, cover letter text, and pre-confirmed answer items.
+//
+// Autofill Execution (globalThis.CareerPilotFormFiller.fill(...)): Executes the form-filling engine against the mock root container using the test draft.
+//
+// Autofill Assertions (assert.equal(name.value, ...)): Verifies that empty name, email, and custom question fields are correctly populated with draft content.
+//
+// Safety Assertions (assert.equal(prefilled.value, ...)): Confirms that existing text is preserved, work authorization fields are left empty, and password inputs are ignored.
+//
+// Filled Count Assertion (assert.equal(result.count, 3)): Validates that the autofill operation successfully modified exactly 3 fields in total.

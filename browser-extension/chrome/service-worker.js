@@ -61,3 +61,22 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
   return false;
 });
+
+//Domain Allowlist (ALLOWED_SENDERS): Defines a Set of trusted hostnames (localhost, 127.0.0.1, and the Vercel domain) allowed to trigger extension background operations.
+//
+// Draft Expiration Calculation (MAX_AGE_MS): Sets a 30-minute time-to-live limit (
+// 30×60×1000 ms) for stored application drafts (note: contains - diff formatting artifacts on lines 2–3).
+//
+// Web App Message Listener: Registers the main background listener to filter and process cross-context messages sent from host application tabs.
+//
+// Session Registration (REGISTER_ACTIVE_SESSION): Verifies the sender's origin host and valid UUID structure before saving the sessionId and tab ID into chrome.storage.session.
+//
+// Session Lookup (GET_ACTIVE_SESSION): Reads and returns the currently stored active session metadata from session storage.
+//
+// Draft Validation & Storage (SAVE_APPROVED_DRAFT): Enforces origin security, validates the APPROVED payload status, truncates text inputs (profile, cover letter, Q&As), and saves the timestamped draft.
+//
+// Internal Extension Listener: Registers a second listener dedicated to handling draft retrieval and cleanup requests from the extension popup context.
+//
+// Draft Retrieval & TTL Check (GET_APPROVED_DRAFT): Retrieves the cached draft and automatically purges it from storage if its age exceeds the 30-minute TTL (MAX_AGE_MS).
+//
+// Draft Removal (CLEAR_APPROVED_DRAFT): Deletes the approvedDraft key from chrome.storage.session when triggered by the popup interface.

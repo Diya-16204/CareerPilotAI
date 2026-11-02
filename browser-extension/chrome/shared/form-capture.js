@@ -34,3 +34,21 @@
 
   globalThis.CareerPilotFormCapture = { capture };
 })();
+
+//IIFE Wrapper ((() => { ... })()): Encapsulates all script logic within a private scope to prevent global variable collisions on host web pages.
+//
+// clean(): Normalizes whitespace, trims text, and truncates DOM strings to 300 characters max.
+//
+// slug(): Converts label text or element names into clean, lowercase snake_case keys (max 70 chars) for backend schema mapping.
+//
+// visible(): Ensures inputs are rendered and actively visible on screen, ignoring display: none or visibility: hidden elements.
+//
+// Element Discovery & Filtering: Queries input, textarea, and select elements while filtering out disabled, hidden, and sensitive input types (e.g., password, file).
+//
+// Deduplication & Grouping: Tracks radio button groups by input name using a Set so multi-choice radio options output as a single logical field.
+//
+// Label Resolution: Resolves human-readable labels using a priority fallback sequence (<legend>, <label>, aria-label, placeholder, name/id).
+//
+// Type & Option Extraction: Normalizes control types into standard enums (TEXT, RADIO, SELECT, etc.) while collecting option choices and required attributes.
+//
+// Payload Export: Assembles field metadata objects into an array and exposes the capture() function globally via globalThis.CareerPilotFormCapture.

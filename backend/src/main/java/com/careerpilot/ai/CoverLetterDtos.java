@@ -12,3 +12,7 @@ public final class CoverLetterDtos {
     public record UpdateRequest(@NotBlank @Size(max=12000) String body){}
     public record Response(UUID id,UUID jobId,String title,String body,String generationSource,Instant createdAt,Instant updatedAt){}
 }
+
+//A Java record (used in public record Response(...)) is a modern Java feature designed purely to hold immutable (read-only) data.
+//
+//When used as a return type in Spring Boot, it acts as a lightweight Data Transfer Object (DTO) that Spring automatically converts into a JSON response.

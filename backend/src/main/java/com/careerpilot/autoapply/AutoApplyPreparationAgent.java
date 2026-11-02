@@ -140,3 +140,7 @@ public class AutoApplyPreparationAgent {
     String writeMissing(List<String> missing) throws IOException { return mapper.writeValueAsString(missing); }
     List<String> readMissing(String json) throws IOException { return mapper.readValue(json, new TypeReference<List<String>>() {}); }
 }
+
+/**
+ * Bounded preparation agent. It can only call the registered, owner-scoped application tools below.
+ */

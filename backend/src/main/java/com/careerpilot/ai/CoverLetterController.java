@@ -18,3 +18,16 @@ public class CoverLetterController {
     @GetMapping("/{id}") public Response get(@PathVariable UUID id,@AuthenticationPrincipal UUID owner){return service.get(id,owner);}
     @PutMapping("/{id}") public Response update(@PathVariable UUID id,@AuthenticationPrincipal UUID owner,@Valid @RequestBody UpdateRequest request){return service.update(id,owner,request);}
 }
+
+//Imports @Valid to trigger standard JavaBean validation rules on method parameters.
+
+//Web API endpoint provider that automatically serializes return values directly into JSON HTTP responses.
+
+//Enables method-level parameter constraint checks for this controller class.
+//@Validated at the class level acts like a security guard standing at the door of your controller.
+//Before any line of code inside a controller method runs, @Validated forces Spring to inspect all incoming parameters against validation rules (such as @NotNull, @Min, @Size, or @Valid).
+
+    //@AuthenticationPrincipal: Spring Security annotation that extracts the logged-in user's authentication details directly from the security context.
+
+    //@RequestParam: Tells Spring to read a query parameter from the URL string (e.g., ?page=1).
+    //(defaultValue = "0"): Fallback value used if the client omits the page query parameter.

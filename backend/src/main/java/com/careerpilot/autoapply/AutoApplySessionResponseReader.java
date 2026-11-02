@@ -52,3 +52,7 @@ public class AutoApplySessionResponseReader {
         }
     }
 }
+
+/**
+ * Loads and maps session responses while the fetched job and resume associations are available.
+ */

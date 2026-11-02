@@ -67,3 +67,15 @@ document.getElementById('clear').addEventListener('click', async () => {
 });
 
 void loadDraft();
+
+//State & DOM Initialization (let currentDraft ...): Holds the active draft object in memory and caches references to the popup's status text and draft section DOM nodes.
+//
+// Draft Retrieval & UI Binding (loadDraft()): Fetches the approved draft from the background script via GET_APPROVED_DRAFT, updating the job title, company, and visibility of the draft container.
+//
+// Autofill Handler (fill button click): Queries the active browser tab, injects form-filler.js, executes fill() using chrome.scripting.executeScript, and reports the total count of updated fields.
+//
+// Form Capture Handler (capture button click): Scrapes visible form fields from the current employer tab using form-capture.js and posts the captured schema payload to the active CareerPilot web app tab via window.postMessage.
+//
+// Clear Draft Handler (clear button click): Sends a CLEAR_APPROVED_DRAFT message to background storage to purge session data and resets the popup interface.
+//
+// Initial Load Invocation (void loadDraft()): Executes loadDraft() asynchronously when the extension popup opens to immediately load and display any ready draft data.

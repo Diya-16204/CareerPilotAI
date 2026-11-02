@@ -36,3 +36,5 @@ class CoverLetterServiceTest {
         verify(letters,never()).saveAndFlush(any());
     }
 }
+
+//This unit test (CoverLetterServiceTest) uses JUnit 5, Mockito, and AssertJ to verify multi-tenant authorization security in CoverLetterService. Specifically, it confirms that a candidate cannot generate an AI cover letter for a private job posting owned by another user.

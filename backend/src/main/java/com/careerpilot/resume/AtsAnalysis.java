@@ -33,3 +33,16 @@ public class AtsAnalysis {
     public int getScore(){return score;} public String getAnalysisType(){return analysisType;} public String getFormulaVersion(){return formulaVersion;}
     public String getResultJson(){return resultJson;} public Instant getCreatedAt(){return createdAt;}
 }
+
+        //SELECT * FROM resume_analyses
+        //WHERE user_id = '550e8400-e29b-41d4-a716-446655440000'
+        //ORDER BY created_at DESC;
+
+        //SELECT * FROM resume_analyses
+        //WHERE resume_version_id = '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d'
+        //ORDER BY created_at DESC;
+
+//Why Column Order Matters in Composite Indexes
+//In database indexing, column order follows the Leftmost Prefix Rule:
+//Filtering Column First (user_id / resume_version_id): The database uses the index tree to instantly jump to rows belonging to that specific user or version.
+//Sorting Column Second (created_at): Because the index stores items pre-sorted by created_at within each user's subgroup, the database can return paginated results immediately without a Filesort operation.

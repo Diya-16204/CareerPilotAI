@@ -16,3 +16,6 @@ public final class InterviewDtos {
     public record AnswerResponse(UUID id,UUID questionId,int ordinal,String question,String answer,int contentCoverageScore,String feedback,String evaluationSource,String modelAnswer,Instant createdAt){}
     public record SessionDetail(SessionResponse session,List<AnswerResponse> answers){}
 }
+
+    //Yes, a Java record is a valid data type and it can be returned from any method just like any regular Java class.
+    //Introduced in Java 16, a record is a special reference data type designed specifically to act as an immutable data carrier (Data Transfer Object / DTO).

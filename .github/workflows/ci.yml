@@ -1,3 +1,67 @@
+#ci.yml file automates the process of building and testing your CareerPilotAI project.
+
+#Your file is written in YAML.
+
+#YAML = YAML Ain't Markup Language.
+
+#It is a human-readable data serialization language used for configuration files.
+
+#The indentation establishes the parent-child relationship.
+
+#Rule 3: Lists use hyphens (-).
+
+#steps:
+
+#  - run: npm ci
+
+#  - run: npm test
+
+#This represents a list containing two steps.
+
+#Build and test is simply the display name of this workflow.
+
+#A workflow is an automated process defined in a YAML file that GitHub Actions executes when certain events happen.
+
+#on specifies the events that trigger the workflow.
+
+#When should GitHub execute this automation?
+
+#push             	Check code whenever commits are pushed
+
+#pull_request	      Check proposed changes before merging
+
+#A job is a collection of steps that GitHub Actions executes on a runner.
+
+#By default, independent jobs run in parallel.
+
+#If you wanted the backend to wait for the frontend, you could use:
+
+#backend:
+
+#  needs: frontend
+
+#runs-on: ubuntu-latest
+
+#A runner is a machine that executes your GitHub Actions workflow jobs.
+
+#When GitHub Actions starts a job, it needs a machine on which it can execute commands.
+
+#That machine is called a runner.
+
+#Why Ubuntu?
+
+#Because it provides an environment where you can execute commands such as:
+
+#npm install
+
+#npm test
+
+#mvn verify
+
+#without needing to use your personal Windows laptop.
+
+      #uses ---- Specifies that this step should use an existing GitHub Action rather than execute a shell command directly.
+
 name: Build and test
 
 on:

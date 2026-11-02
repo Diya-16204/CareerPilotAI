@@ -76,3 +76,7 @@ public class ApplicationService {
     }
     private Response dto(Application application){return new Response(application.getId(),application.getTitle(),application.getCompany(),application.getStatus(),application.getAppliedAt(),application.getUpdatedAt());}
 }
+
+    /**
+     * Records a CareerPilot demo submission in the user's normal tracker and analytics.
+     */

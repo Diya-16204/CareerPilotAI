@@ -21,3 +21,8 @@ public class InterviewController {
     @GetMapping("/sessions/{id}/next") public QuestionResponse next(@PathVariable UUID id,@AuthenticationPrincipal UUID owner){return service.next(id,owner);}
     @PostMapping("/sessions/{id}/answers") public AnswerResponse answer(@PathVariable UUID id,@AuthenticationPrincipal UUID owner,@Valid @RequestBody AnswerRequest request){return service.answer(id,owner,request);}
 }
+
+//http://localhost:8080/api/v1/users / 42 / applications ? status=APPLIED & limit=10
+//                                    └───┬────┘            └──────┬─────────────────┘
+//                               @PathVariable                @RequestParam
+//                             (Inside URI path)           (After '?' separator)

@@ -19,3 +19,5 @@ class ApplicationPrepSessionRepositoryTest {
         assertThat(detailGraph.attributePaths()).containsExactly("job", "resumeVersion");
     }
 }
+
+//While assertThat() checks the state of an object (what value a method returned), verify() checks the behavior of your code—specifically whether a mock object's method was actually called, how many times it was called, and what arguments were passed to it.

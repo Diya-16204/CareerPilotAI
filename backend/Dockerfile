@@ -1,3 +1,5 @@
+#This multi-stage Dockerfile compiles and packages the careerpilot-api Spring Boot application using Java 21, enforcing container hardening and build optimization best practices.
+
 FROM eclipse-temurin:21-jdk-jammy AS build
 
 WORKDIR /workspace

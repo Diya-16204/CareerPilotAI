@@ -1,3 +1,5 @@
+@REM This script is the Apache Maven Wrapper (mvnw.cmd) for Windows. Its primary purpose is to allow anyone to build the project without manually installing Apache Maven first, guaranteeing that every developer and CI/CD pipeline uses the exact same Maven version.
+
 <# : batch portion
 @REM ----------------------------------------------------------------------------
 @REM Licensed to the Apache Software Foundation (ASF) under one

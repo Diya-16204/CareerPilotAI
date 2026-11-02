@@ -13,3 +13,5 @@ class MatchingServiceTest {
     }
     @Test void returnsZeroWhenJobHasNoStructuredSkills(){assertThat(MatchingService.deterministicScore(List.of(),List.of("Java"))).isZero();}
 }
+
+        //Math Verification: 3 matched skills out of 4 required skills = $\frac{3}{4} \times 100 = \mathbf{75\%}$.

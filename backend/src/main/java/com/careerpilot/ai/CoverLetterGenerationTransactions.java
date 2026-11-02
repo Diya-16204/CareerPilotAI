@@ -64,3 +64,11 @@ public class CoverLetterGenerationTransactions {
                           String jobTitle, String company, String jobDescription,
                           String resumeText, List<String> verifiedSkills) {}
 }
+
+//for transaction management
+
+/**
+ * Loads immutable AI context and persists results in separate short transactions.
+ */
+
+    //Opens a read-only database transaction optimized for fetching data without locking rows for updates.

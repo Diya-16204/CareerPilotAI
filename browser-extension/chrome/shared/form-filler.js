@@ -49,3 +49,21 @@
 
   globalThis.CareerPilotFormFiller = { fill };
 })();
+
+//IIFE Module Wrapper ((() => { ... })()): Encapsulates all filler logic within a private scope to prevent global variable collisions on host web pages.
+//
+// normalize(): Converts text to lowercase and replaces non-alphanumeric characters with spaces for clean keyword matching.
+//
+// sensitive Safety Pattern: Defines a strict denylist of sensitive keywords (e.g., SSN, visa/sponsorship status, race, criminal history, salary) to prevent automated injection into high-risk form fields.
+//
+// labelsFor(): Extracts and normalizes all available metadata descriptors for an input field (<label>, aria-label, placeholder, name, id).
+//
+// profileValue(): Maps normalized field labels or input types (email, phone, name, location, headline, cover letter, job title) to candidate profile data.
+//
+// fill() Target Discovery: Queries input and textarea elements while filtering out disabled, read-only, hidden, non-text inputs, and fields that already contain text.
+//
+// fill() Match & Injection: Skips sensitive fields, retrieves matching candidate data (or fallback draft.answers), and populates control.value.
+//
+// DOM Event Dispatching: Triggers native input and change events so reactive frameworks (React, Vue, Angular) detect the newly injected text.
+//
+// Autofill Tracking & Export: Flags filled controls with data-careerpilot-autofilled="true", returns a count/list of filled elements, and exposes CareerPilotFormFiller globally via globalThis.

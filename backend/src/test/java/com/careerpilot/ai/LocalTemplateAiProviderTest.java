@@ -12,3 +12,5 @@ class LocalTemplateAiProviderTest {
         assertThat(draft.body()).doesNotContain("10 years","increased revenue");
     }
 }
+
+//This unit test (LocalTemplateAiProviderTest) verifies the behavior of LocalTemplateAiProvider—a deterministic, fallback cover letter generator that operates locally without making external LLM (e.g., OpenAI or Claude) API calls.

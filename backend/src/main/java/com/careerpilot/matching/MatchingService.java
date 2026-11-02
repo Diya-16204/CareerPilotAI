@@ -57,3 +57,23 @@ public class MatchingService {
     private static String canonical(String name){String normalized=name.toLowerCase(Locale.ROOT).replaceAll("\\s+"," ").trim();return ALIASES.getOrDefault(normalized,normalized);}
     private String findEvidence(String text,String skill){Pattern pattern=Pattern.compile("(?i)(?<![a-z0-9])"+Pattern.quote(skill)+"(?![a-z0-9])");var matcher=pattern.matcher(text);return matcher.find()?"Resume text includes “"+matcher.group()+"”.":null;}
 }
+
+    //FORMULA_VERSION: Constants like "skill-coverage-v1" stamp stored match records with the version of the algorithm used. If the scoring formula changes in the future, past match records in the database remain identifiable and auditable.
+
+      //          |
+     //           V
+    //Why it's done: Prevents false negatives. Without alias mapping, a job requiring "PostgreSQL" would flag a candidate listing "Postgres" as missing the skill.
+
+    //(?i) (Case Insensitive Flag): Makes the search case-insensitive so that "java", "Java", and "JAVA" all match.
+    //
+    //(?<![a-z0-9]) (Negative Lookbehind): Asserts that the skill name is not immediately preceded by an alphanumeric character.
+    //
+    //Prevents false positive: Searching for "script" won't match inside "typescript".
+    //
+    //Pattern.quote(skill) (Literal Escaping): Escapes special regular expression characters in the skill name so they are treated as literal text.
+    //
+    //Why it's necessary: Without this, a skill like "C++" or ".NET" would treat + or . as regex operators and throw a syntax error or give incorrect results.
+    //
+    //(?![a-z0-9]) (Negative Lookahead): Asserts that the skill name is not immediately followed by an alphanumeric character.
+    //
+    //Prevents false positive: Searching for "Java" won't match inside "JavaScript".

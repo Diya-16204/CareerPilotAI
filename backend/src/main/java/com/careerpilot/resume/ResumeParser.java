@@ -34,3 +34,15 @@ public class ResumeParser {
     public enum Format { PDF,DOCX }
     public record Parsed(String text,String email,String phone,List<String> skills){}
 }
+
+            //(?i) — Case-insensitive regex flag making matches ignore uppercase/lowercase differences.
+            //
+            //(?<!...) — Negative lookbehind asserting the skill is not immediately preceded by specified characters.
+            //
+            //[a-z0-9] — Regex character class matching any alphanumeric character (letters a-z or digits 0-9).
+            //
+            //+ — Java string concatenation operator joining regex clauses and variables together.
+            //
+            //Pattern.quote(skill) — Escapes special regex symbols in the skill name to treat them as literal text.
+            //
+            //(?!...) — Negative lookahead asserting the skill is not immediately followed by specified characters.
